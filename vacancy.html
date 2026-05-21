@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Вакансия — Центр занятости</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <header class="header">
+    <div class="container header__inner">
+      <a class="logo" href="index.html">
+        <span class="logo__mark" aria-hidden="true"></span>
+        <span class="logo__text">Центр занятости</span>
+      </a>
+      <nav class="nav" aria-label="Основное меню">
+        <a class="nav__link" href="index.html">Главная</a>
+        <a class="nav__link nav__link--active" href="vacancies.html">Вакансии</a>
+        <a class="nav__link" href="services.html">Услуги</a>
+        <a class="nav__link" href="about.html">О центре</a>
+        <a class="nav__link" href="documents.html">Документы</a>
+        <a class="nav__link" href="contacts.html">Контакты</a>
+      </nav>
+      <a class="btn btn--outline header__cta" href="cabinet.html">Личный кабинет</a>
+    </div>
+  </header>
+
+  <main>
+    <section class="page-head page-head--compact">
+      <div class="container">
+        <p class="page-head__crumb"><a href="index.html">Главная</a> / <a href="vacancies.html">Вакансии</a> / Карточка</p>
+        <a class="back-link" href="vacancies.html">← К списку вакансий</a>
+      </div>
+    </section>
+
+    <article class="detail">
+      <div class="container detail__grid">
+        <div class="detail__main">
+          <header class="detail__header">
+            <p class="detail__employer">Загрузка…</p>
+            <h1 class="detail__title">Загрузка…</h1>
+            <p class="detail__salary"></p>
+            <ul class="detail__meta"></ul>
+          </header>
+          <div class="prose"></div>
+        </div>
+
+        <aside class="detail__aside">
+          <div class="aside-card">
+            <h2 class="aside-card__title">Отклик</h2>
+            <p class="aside-card__text">Войдите в личный кабинет, чтобы отправить резюме и отслеживать статус рассмотрения.</p>
+            <button id="respond-btn" type="button" class="btn btn--primary btn--block">Откликнуться</button>
+          </div>
+          <div class="aside-card aside-card--muted">
+            <h3 class="aside-card__subtitle">Работодатель</h3>
+            <p class="aside-card__text">Загрузка…</p>
+            <p class="aside-card__hint">Контакты доступны после авторизации в соответствии с политикой портала.</p>
+          </div>
+        </aside>
+      </div>
+    </article>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer__grid footer__grid--wide">
+      <div class="footer__brand">
+        <a class="logo logo--footer" href="index.html">
+          <span class="logo__mark" aria-hidden="true"></span>
+          <span class="logo__text">Центр занятости</span>
+        </a>
+        <p class="footer__copy">© 2026 Учебный макет дипломного проекта</p>
+      </div>
+      <div>
+        <p class="footer__heading">Разделы</p>
+        <p class="footer__line"><a href="vacancies.html">Вакансии</a></p>
+        <p class="footer__line"><a href="services.html">Услуги</a></p>
+        <p class="footer__line"><a href="about.html">О центре</a></p>
+        <p class="footer__line"><a href="documents.html">Документы</a></p>
+        <p class="footer__line"><a href="cabinet.html">Личный кабинет</a></p>
+      </div>
+      <div>
+        <p class="footer__heading">Контакты (макет)</p>
+        <p class="footer__line">г. Иваново, ул. Примерная, 1</p>
+        <p class="footer__line">+7 (000) 000-00-00</p>
+        <p class="footer__line"><a href="contacts.html">Схема проезда</a></p>
+      </div>
+      <div>
+        <p class="footer__heading">Режим</p>
+        <p class="footer__line">Пн–Пт 9:00–18:00</p>
+        <p class="footer__line">Перерыв 13:00–14:00</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase-config.js"></script>
+  <script src="js/vacancy.js"></script>
+</body>
+</html>

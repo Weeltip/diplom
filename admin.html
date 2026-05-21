@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Админ-панель — Центр занятости</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body class="body--auth admin-page">
+  <div id="admin-page-loader" class="page-loader page-loader--admin" aria-busy="true" aria-live="polite">
+    <div class="page-loader__inner">
+      <div class="page-loader__spinner" aria-hidden="true"></div>
+      <p class="page-loader__brand">Центр занятости</p>
+      <p class="page-loader__text">Загрузка админ-панели…</p>
+    </div>
+  </div>
+
+  <header class="header">
+    <div class="container header__inner">
+      <a class="logo" href="index.html">
+        <span class="logo__mark" aria-hidden="true"></span>
+        <span class="logo__text">Центр занятости</span>
+      </a>
+      <nav class="nav" aria-label="Основное меню">
+        <a class="nav__link" href="index.html">Главная</a>
+        <a class="nav__link" href="vacancies.html">Вакансии</a>
+        <a class="nav__link" href="services.html">Услуги</a>
+        <a class="nav__link" href="about.html">О центре</a>
+        <a class="nav__link" href="documents.html">Документы</a>
+        <a class="nav__link" href="contacts.html">Контакты</a>
+      </nav>
+      <a class="btn btn--outline header__cta" href="cabinet.html">Личный кабинет</a>
+    </div>
+  </header>
+
+  <main class="admin-wrap">
+    <div id="admin-gate-deny" class="admin-gate auth-card container" hidden>
+      <h1 class="auth-card__title">Нет доступа</h1>
+      <p class="auth-form__note">Админ-панель доступна только пользователям с ролью <strong>admin</strong> в таблице <code>profiles</code>. Выполните миграцию <code>sql/migration-admin.sql</code> и назначьте роль в Supabase.</p>
+      <a class="btn btn--primary" href="cabinet.html">В личный кабинет</a>
+    </div>
+
+    <div id="admin-gate-ok" class="admin-app container" hidden>
+      <div class="admin-app__head">
+        <div class="admin-app__head-text">
+          <div class="admin-app__title-row">
+            <h1 class="admin-app__title">Админ-панель</h1>
+            <span class="admin-app__pill" aria-hidden="true">Админ</span>
+          </div>
+          <p class="admin-app__user"><span id="admin-user-label"></span></p>
+        </div>
+        <button type="button" id="admin-logout" class="btn btn--outline admin-app__logout">Выйти</button>
+      </div>
+
+      <div class="admin-surface">
+        <div class="admin-layout">
+          <aside class="admin-nav" aria-label="Разделы админки">
+            <p class="admin-nav__label">Разделы</p>
+            <button type="button" class="admin-nav__btn admin-nav__btn--active" data-section="dashboard">Обзор</button>
+            <button type="button" class="admin-nav__btn" data-section="vacancies">Вакансии</button>
+            <button type="button" class="admin-nav__btn" data-section="users">Пользователи</button>
+            <button type="button" class="admin-nav__btn" data-section="responses">Отклики</button>
+          </aside>
+
+          <div class="admin-panels">
+            <section id="admin-panel-dashboard" class="admin-panel" data-panel="dashboard">
+            <header class="admin-panel__head">
+              <h2 class="admin-panel__title">Сводка</h2>
+              <p class="admin-panel__desc">Быстрые счётчики по базе данных.</p>
+            </header>
+            <div class="admin-stats">
+              <div class="admin-stat">
+                <span class="admin-stat__value" id="stat-profiles">—</span>
+                <span class="admin-stat__label">профилей</span>
+              </div>
+              <div class="admin-stat">
+                <span class="admin-stat__value" id="stat-vacancies">—</span>
+                <span class="admin-stat__label">вакансий</span>
+              </div>
+              <div class="admin-stat">
+                <span class="admin-stat__value" id="stat-responses">—</span>
+                <span class="admin-stat__label">откликов</span>
+              </div>
+            </div>
+            <p class="admin-panel__footnote">Счётчики обновляются при каждом открытии раздела «Обзор».</p>
+            </section>
+
+            <section id="admin-panel-vacancies" class="admin-panel" data-panel="vacancies" hidden>
+            <header class="admin-panel__head">
+              <h2 class="admin-panel__title">Все вакансии</h2>
+              <p class="admin-panel__desc">Поиск, закрепление в каталоге, правка и удаление.</p>
+            </header>
+            <div class="admin-toolbar">
+              <label class="search-form__field admin-toolbar__search">
+                <span class="search-form__label">Поиск по названию</span>
+                <input type="search" id="admin-vac-search" class="input" placeholder="Должность…" autocomplete="off" />
+              </label>
+            </div>
+            <div id="admin-vac-list" class="admin-table-wrap"></div>
+            <button type="button" id="admin-vac-more" class="btn btn--outline admin-load-more" hidden>Загрузить ещё</button>
+            </section>
+
+            <section id="admin-panel-users" class="admin-panel" data-panel="users" hidden>
+            <header class="admin-panel__head">
+              <h2 class="admin-panel__title">Пользователи</h2>
+              <p class="admin-panel__desc">Роль <strong>admin</strong> задаётся только в SQL. Здесь — переключение соискатель ↔ работодатель.</p>
+            </header>
+            <div id="admin-users-list" class="admin-table-wrap"></div>
+            <button type="button" id="admin-users-more" class="btn btn--outline admin-load-more" hidden>Загрузить ещё</button>
+            </section>
+
+            <section id="admin-panel-responses" class="admin-panel" data-panel="responses" hidden>
+            <header class="admin-panel__head">
+              <h2 class="admin-panel__title">Все отклики</h2>
+              <p class="admin-panel__desc">Отклики соискателей по вакансиям, контакты для связи.</p>
+            </header>
+            <div id="admin-responses-list" class="admin-responses-list"></div>
+            </section>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <div id="admin-vacancy-modal" class="admin-modal" hidden aria-hidden="true">
+    <div class="admin-modal__backdrop" data-close-modal></div>
+    <div class="admin-modal__dialog auth-card admin-modal__dialog--form" role="dialog" aria-labelledby="admin-modal-title">
+      <h2 id="admin-modal-title" class="admin-modal__title">Редактирование вакансии</h2>
+      <form id="admin-vacancy-form" class="employer-form">
+        <input type="hidden" name="vacancy_id" />
+        <label class="search-form__field">
+          <span class="search-form__label">Организация</span>
+          <input type="text" name="employer" class="input" required maxlength="200" />
+        </label>
+        <label class="search-form__field">
+          <span class="search-form__label">Должность</span>
+          <input type="text" name="title" class="input" required maxlength="200" />
+        </label>
+        <div class="employer-form__row">
+          <label class="search-form__field">
+            <span class="search-form__label">Зарплата</span>
+            <input type="text" name="salary" class="input" />
+          </label>
+          <label class="search-form__field">
+            <span class="search-form__label">Тип занятости</span>
+            <select name="employment_type" class="input">
+              <option>Полная занятость</option>
+              <option>Сменный график</option>
+              <option>Удалённо</option>
+              <option>Стажировка</option>
+            </select>
+          </label>
+        </div>
+        <div class="employer-form__row">
+          <label class="search-form__field">
+            <span class="search-form__label">Локация</span>
+            <input type="text" name="location" class="input" />
+          </label>
+          <label class="search-form__field">
+            <span class="search-form__label">Опыт</span>
+            <input type="text" name="experience" class="input" />
+          </label>
+        </div>
+        <label class="search-form__field">
+          <span class="search-form__label">Описание</span>
+          <textarea name="description" class="input input--textarea" rows="3" required></textarea>
+        </label>
+        <label class="search-form__field">
+          <span class="search-form__label">Требования (;)</span>
+          <textarea name="requirements" class="input input--textarea" rows="2"></textarea>
+        </label>
+        <label class="search-form__field">
+          <span class="search-form__label">Условия (;)</span>
+          <textarea name="conditions" class="input input--textarea" rows="2"></textarea>
+        </label>
+        <label class="admin-checkbox">
+          <input type="checkbox" name="is_featured" />
+          <span>Закрепить вверху каталога (is_featured)</span>
+        </label>
+        <div class="employer-form__actions">
+          <button type="submit" class="btn btn--primary">Сохранить</button>
+          <button type="button" class="btn btn--outline" data-close-modal>Отмена</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <footer class="footer footer--simple">
+    <div class="container footer__simple">
+      <p class="footer__copy footer__copy--inline">© 2026 Учебный макет · <a href="documents.html">Документы</a> · <a href="index.html">На главную</a></p>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase-config.js"></script>
+  <script src="js/admin.js"></script>
+</body>
+</html>

@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Главная — Центр занятости</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <header class="header">
+    <div class="container header__inner">
+      <a class="logo" href="index.html">
+        <span class="logo__mark" aria-hidden="true"></span>
+        <span class="logo__text">Центр занятости</span>
+      </a>
+      <nav class="nav" aria-label="Основное меню">
+        <a class="nav__link nav__link--active" href="index.html">Главная</a>
+        <a class="nav__link" href="vacancies.html">Вакансии</a>
+        <a class="nav__link" href="services.html">Услуги</a>
+        <a class="nav__link" href="about.html">О центре</a>
+        <a class="nav__link" href="documents.html">Документы</a>
+        <a class="nav__link" href="contacts.html">Контакты</a>
+      </nav>
+      <a class="btn btn--outline header__cta" href="cabinet.html">Личный кабинет</a>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="container hero__grid">
+        <div class="hero__content">
+          <p class="hero__badge">Государственный портал</p>
+          <h1 class="hero__title">Трудоустройство и поддержка на региональном уровне</h1>
+          <p class="hero__lead">
+            Актуальные вакансии, консультации и программы переподготовки — в одном месте для соискателей и работодателей.
+          </p>
+          <div class="hero__actions">
+            <a class="btn btn--primary" href="vacancies.html">Смотреть вакансии</a>
+            <a class="btn btn--ghost" href="services.html">Наши услуги</a>
+          </div>
+        </div>
+        <div class="hero__panel" aria-hidden="true">
+          <div class="stat-card">
+            <span class="stat-card__value" id="stat-vacancies">…</span>
+            <span class="stat-card__label">открытых вакансий</span>
+          </div>
+          <div class="stat-card stat-card--alt">
+            <span class="stat-card__value" id="stat-employers">…</span>
+            <span class="stat-card__label">работодателей на портале</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="features">
+      <div class="container">
+        <div class="section-head section-head--center">
+          <h2 class="section-head__title">С чего начать</h2>
+          <p class="section-head__meta">Три шага к новой работе или кадрам для компании</p>
+        </div>
+        <ul class="feature-grid">
+          <li class="feature-card">
+            <span class="feature-card__num">01</span>
+            <h3 class="feature-card__title">Регистрация</h3>
+            <p class="feature-card__text">Создайте учётную запись в личном кабинете и заполните профиль или данные организации.</p>
+          </li>
+          <li class="feature-card">
+            <span class="feature-card__num">02</span>
+            <h3 class="feature-card__title">Поиск и отклики</h3>
+            <p class="feature-card__text">Фильтруйте вакансии по региону и графику, сохраняйте интересные предложения.</p>
+          </li>
+          <li class="feature-card">
+            <span class="feature-card__num">03</span>
+            <h3 class="feature-card__title">Сопровождение</h3>
+            <p class="feature-card__text">Запишитесь к специалисту центра зачисления — поможем с резюме и собеседованием.</p>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="listings listings--compact">
+      <div class="container">
+        <div class="section-head">
+          <h2 class="section-head__title">Свежие вакансии</h2>
+          <p class="section-head__meta"><a href="vacancies.html">Все вакансии →</a></p>
+        </div>
+        <ul id="home-vacancies" class="vacancy-grid vacancy-grid--list"></ul>
+      </div>
+    </section>
+
+    <section class="cta-band">
+      <div class="container cta-band__inner">
+        <div>
+          <h2 class="cta-band__title">Нужна консультация специалиста?</h2>
+          <p class="cta-band__text">Запишитесь на приём в центр занятости — поможем с резюме и поиском работы.</p>
+        </div>
+        <a class="btn btn--on-dark" href="contacts.html">Записаться</a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer__grid footer__grid--wide">
+      <div class="footer__brand">
+        <a class="logo logo--footer" href="index.html">
+          <span class="logo__mark" aria-hidden="true"></span>
+          <span class="logo__text">Центр занятости</span>
+        </a>
+        <p class="footer__copy">© 2026 Учебный макет дипломного проекта</p>
+      </div>
+      <div>
+        <p class="footer__heading">Разделы</p>
+        <p class="footer__line"><a href="vacancies.html">Вакансии</a></p>
+        <p class="footer__line"><a href="services.html">Услуги</a></p>
+        <p class="footer__line"><a href="about.html">О центре</a></p>
+        <p class="footer__line"><a href="documents.html">Документы</a></p>
+        <p class="footer__line"><a href="cabinet.html">Личный кабинет</a></p>
+      </div>
+      <div>
+        <p class="footer__heading">Контакты (макет)</p>
+        <p class="footer__line">г. Иваново, ул. Примерная, 1</p>
+        <p class="footer__line">+7 (000) 000-00-00</p>
+        <p class="footer__line"><a href="contacts.html">Схема проезда</a></p>
+      </div>
+      <div>
+        <p class="footer__heading">Режим</p>
+        <p class="footer__line">Пн–Пт 9:00–18:00</p>
+        <p class="footer__line">Перерыв 13:00–14:00</p>
+      </div>
+    </div>
+  </footer>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase-config.js"></script>
+  <script src="js/home.js"></script>
+</body>
+</html>

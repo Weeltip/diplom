@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Контакты — Центр занятости</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <header class="header">
+    <div class="container header__inner">
+      <a class="logo" href="index.html">
+        <span class="logo__mark" aria-hidden="true"></span>
+        <span class="logo__text">Центр занятости</span>
+      </a>
+      <nav class="nav" aria-label="Основное меню">
+        <a class="nav__link" href="index.html">Главная</a>
+        <a class="nav__link" href="vacancies.html">Вакансии</a>
+        <a class="nav__link" href="services.html">Услуги</a>
+        <a class="nav__link" href="about.html">О центре</a>
+        <a class="nav__link" href="documents.html">Документы</a>
+        <a class="nav__link nav__link--active" href="contacts.html">Контакты</a>
+      </nav>
+      <a class="btn btn--outline header__cta" href="cabinet.html">Личный кабинет</a>
+    </div>
+  </header>
+
+  <main>
+    <section class="page-head">
+      <div class="container">
+        <p class="page-head__crumb"><a href="index.html">Главная</a> / Контакты</p>
+        <h1 class="page-head__title">Контакты</h1>
+        <p class="page-head__lead">Центральный офис и каналы связи. Данные учебного макета.</p>
+      </div>
+    </section>
+
+    <section class="content-block">
+      <div class="container contact-grid">
+        <div class="contact-info">
+          <h2 class="contact-info__title">Адрес</h2>
+          <p class="contact-info__text">153000, г. Иваново, ул. Примерная, д. 1</p>
+          <h2 class="contact-info__title">Телефон</h2>
+          <p class="contact-info__text">+7 (000) 000-00-00 — справочная</p>
+          <h2 class="contact-info__title">Электронная почта</h2>
+          <p class="contact-info__text">info@example.ru</p>
+          <h2 class="contact-info__title">Режим работы</h2>
+          <p class="contact-info__text">Пн–Пт 9:00–18:00, перерыв 13:00–14:00<br />Сб–Вс — выходной</p>
+        </div>
+        <div class="map-placeholder" role="img" aria-label="Макет карты — в дипломе можно встроить Яндекс или Google Maps">
+          <span class="map-placeholder__label">Карта (макет)</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="content-block content-block--tint">
+      <div class="container">
+        <h2 class="section-head__title section-head__title--solo">Обратная связь</h2>
+        <p class="section-head__meta section-head__meta--solo">Форма без отправки на сервер — визуал для макета.</p>
+        <form class="feedback-form" action="#" method="post" onsubmit="return false;">
+          <div class="feedback-form__row">
+            <label class="search-form__field">
+              <span class="search-form__label">ФИО</span>
+              <input type="text" class="input" placeholder="Иванов Иван Иванович" />
+            </label>
+            <label class="search-form__field">
+              <span class="search-form__label">Телефон или e-mail</span>
+              <input type="text" class="input" placeholder="+7 …" />
+            </label>
+          </div>
+          <label class="search-form__field">
+            <span class="search-form__label">Сообщение</span>
+            <textarea class="input input--textarea" rows="4" placeholder="Текст обращения"></textarea>
+          </label>
+          <button type="submit" class="btn btn--primary">Отправить</button>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer__grid footer__grid--wide">
+      <div class="footer__brand">
+        <a class="logo logo--footer" href="index.html">
+          <span class="logo__mark" aria-hidden="true"></span>
+          <span class="logo__text">Центр занятости</span>
+        </a>
+        <p class="footer__copy">© 2026 Учебный макет дипломного проекта</p>
+      </div>
+      <div>
+        <p class="footer__heading">Разделы</p>
+        <p class="footer__line"><a href="vacancies.html">Вакансии</a></p>
+        <p class="footer__line"><a href="services.html">Услуги</a></p>
+        <p class="footer__line"><a href="about.html">О центре</a></p>
+        <p class="footer__line"><a href="documents.html">Документы</a></p>
+        <p class="footer__line"><a href="cabinet.html">Личный кабинет</a></p>
+      </div>
+      <div>
+        <p class="footer__heading">Контакты (макет)</p>
+        <p class="footer__line">г. Иваново, ул. Примерная, 1</p>
+        <p class="footer__line">+7 (000) 000-00-00</p>
+        <p class="footer__line"><a href="contacts.html">Схема проезда</a></p>
+      </div>
+      <div>
+        <p class="footer__heading">Режим</p>
+        <p class="footer__line">Пн–Пт 9:00–18:00</p>
+        <p class="footer__line">Перерыв 13:00–14:00</p>
+      </div>
+    </div>
+  </footer>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase-config.js"></script>
+</body>
+</html>
