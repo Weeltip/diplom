@@ -65,11 +65,25 @@
       .join('');
   }
 
-  function vacancyStatusBadge(isPublished) {
-    if (isPublished) {
+  function vacancyStatusBadge(v) {
+    if (v.is_published) {
       return '<span class="vacancy-status vacancy-status--published">Опубликована</span>';
     }
+    if (v.rejection_reason) {
+      return '<span class="vacancy-status vacancy-status--rejected">Отклонена</span>';
+    }
     return '<span class="vacancy-status vacancy-status--pending">На проверке</span>';
+  }
+
+  function rejectionCommentHtml(v) {
+    if (!v.rejection_reason) return '';
+    const date = v.rejected_at ? formatDate(v.rejected_at) : '';
+    return `
+      <div class="employer-rejection-note">
+        <p class="employer-rejection-note__title">Причина отклонения${date ? ` (${date})` : ''}:</p>
+        <p class="employer-rejection-note__text">${escapeHtml(v.rejection_reason)}</p>
+        <p class="employer-rejection-note__hint">Исправьте замечания и отправьте вакансию на проверку снова.</p>
+      </div>`;
   }
 
   async function refreshList() {
@@ -96,10 +110,11 @@
     }
 
     wrap.innerHTML = data.map((v) => `
-      <div class="employer-vacancy-row" data-id="${v.id}">
+      <div class="employer-vacancy-row${v.rejection_reason ? ' employer-vacancy-row--rejected' : ''}" data-id="${v.id}">
         <div class="employer-vacancy-row__main">
           <a href="vacancy.html?id=${v.id}" class="employer-vacancy-row__title">${escapeHtml(v.title)}</a>
-          <span class="employer-vacancy-row__meta">${escapeHtml(v.employer)} · ${formatDate(v.created_at)} · ${vacancyStatusBadge(v.is_published)}</span>
+          <span class="employer-vacancy-row__meta">${escapeHtml(v.employer)} · ${formatDate(v.created_at)} · ${vacancyStatusBadge(v)}</span>
+          ${rejectionCommentHtml(v)}
         </div>
         <div class="employer-vacancy-row__actions">
           <button type="button" class="btn btn--outline btn--sm employer-edit" data-id="${v.id}">Изменить</button>
@@ -294,6 +309,13 @@
       }
 
       if (editingId) {
+        const { data: prev } = await sb
+          .from('vacancies')
+          .select('rejection_reason')
+          .eq('id', editingId)
+          .eq('created_by', user.id)
+          .maybeSingle();
+
         const { error } = await sb
           .from('vacancies')
           .update({
@@ -314,7 +336,12 @@
           showToast(error.message, 'error');
           return;
         }
-        showToast('Изменения отправлены на повторную проверку', 'success');
+        showToast(
+          prev?.rejection_reason
+            ? 'Вакансия исправлена и снова отправлена на проверку'
+            : 'Изменения отправлены на повторную проверку',
+          'success'
+        );
         resetForm();
       } else {
         const { error } = await sb.from('vacancies').insert(payload);

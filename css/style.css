@@ -1453,6 +1453,11 @@ ul {
   color: var(--text-muted);
 }
 
+.auth-form__note--compact {
+  margin: 8px 0 12px;
+  font-size: 0.8rem;
+}
+
 .footer--simple {
   padding: 24px 0 32px;
 }
@@ -1815,6 +1820,75 @@ ul {
 .vacancy-status--pending {
   color: #664d03;
   background: #fff3cd;
+}
+
+.vacancy-status--rejected {
+  color: #842029;
+  background: #f8d7da;
+}
+
+.employer-vacancy-row--rejected {
+  border-color: #f5c2c7;
+  background: #fff8f8;
+}
+
+.employer-rejection-note {
+  margin-top: 10px;
+  padding: 10px 12px;
+  font-size: 0.88rem;
+  color: #842029;
+  background: #f8d7da;
+  border: 1px solid #f5c2c7;
+  border-radius: var(--radius-sm);
+}
+
+.employer-rejection-note__title {
+  margin: 0 0 6px;
+  font-weight: 700;
+}
+
+.employer-rejection-note__text {
+  margin: 0 0 6px;
+}
+
+.employer-rejection-note__hint {
+  margin: 0;
+  font-size: 0.82rem;
+  color: #58151c;
+}
+
+.admin-toolbar__export {
+  flex-shrink: 0;
+  align-self: flex-end;
+}
+
+.admin-reject-form fieldset {
+  border: none;
+  margin: 0 0 16px;
+  padding: 0;
+}
+
+.admin-reject-reasons legend {
+  margin-bottom: 10px;
+}
+
+.admin-reject-option {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin-bottom: 10px;
+  font-size: 0.92rem;
+  cursor: pointer;
+}
+
+.admin-reject-option input {
+  margin-top: 3px;
+  flex-shrink: 0;
+}
+
+.vacancy-moderation-notice__title {
+  margin: 0 0 8px;
+  font-weight: 700;
 }
 
 .employer-hint--warn {
@@ -2260,11 +2334,61 @@ ul {
 }
 
 .admin-table-wrap {
+  position: relative;
   overflow-x: auto;
   margin: 0 -2px;
   padding: 2px;
   border-radius: var(--radius-sm);
   scrollbar-color: var(--border) transparent;
+}
+
+.admin-table-wrap--loading {
+  min-height: 220px;
+}
+
+.admin-table-preloader {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 24px 16px;
+  background: rgba(255, 255, 255, 0.88);
+  border-radius: var(--radius-sm);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.2s ease, visibility 0.2s;
+}
+
+.admin-table-preloader--visible {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.admin-table-preloader__spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: vacancies-spin 0.7s linear infinite;
+}
+
+.admin-table-preloader__text {
+  margin: 0;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.admin-pagination--loading {
+  opacity: 0.65;
+  pointer-events: none;
 }
 
 .admin-table {
@@ -2346,9 +2470,51 @@ ul {
   cursor: pointer;
 }
 
-.admin-load-more {
+.admin-toolbar__pagesize {
+  flex: 0 0 auto;
+  margin-bottom: 0;
+  min-width: 120px;
+}
+
+.admin-toolbar__pagesize .input--sm {
+  min-width: 72px;
+}
+
+.admin-pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 16px 24px;
   margin-top: clamp(18px, 2.5vw, 24px);
-  min-width: 180px;
+  padding: clamp(14px, 2vw, 18px) clamp(16px, 2vw, 20px);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.admin-pagination__arrow {
+  min-width: 44px;
+  padding-left: 14px;
+  padding-right: 14px;
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.admin-pagination__arrow:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.admin-pagination__info {
+  font-size: 0.92rem;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.admin-pagination__info strong {
+  color: var(--text);
+  font-weight: 600;
 }
 
 .admin-modal {

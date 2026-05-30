@@ -53,15 +53,16 @@
           <button type="button" class="tabs__btn" role="tab" aria-selected="false">Регистрация</button>
         </div>
 
-        <form id="login-form" class="auth-form" action="#" method="post" onsubmit="return false;" aria-label="Вход">
+        <form id="login-form" class="auth-form" aria-label="Вход" novalidate>
           <label class="search-form__field">
             <span class="search-form__label">E-mail</span>
-            <input type="email" name="email" class="input" autocomplete="username" required />
+            <input type="email" id="login-email" name="email" class="input" autocomplete="username" inputmode="email" spellcheck="false" required />
           </label>
           <label class="search-form__field">
             <span class="search-form__label">Пароль</span>
-            <input type="password" name="password" class="input" autocomplete="current-password" required />
+            <input type="password" id="login-password" name="password" class="input" autocomplete="current-password" spellcheck="false" autocapitalize="off" required />
           </label>
+          <p class="auth-form__note auth-form__note--compact">Пароль — латиницей, без лишних пробелов в начале и в конце.</p>
           <button type="submit" class="btn btn--primary btn--block">Войти</button>
         </form>
 

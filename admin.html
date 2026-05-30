@@ -96,7 +96,7 @@
             <section id="admin-panel-moderation" class="admin-panel" data-panel="moderation" hidden>
             <header class="admin-panel__head">
               <h2 class="admin-panel__title">Проверка вакансий</h2>
-              <p class="admin-panel__desc">Вакансии работодателей, ожидающие одобрения. После проверки нажмите «Разрешить» — вакансия появится в каталоге.</p>
+              <p class="admin-panel__desc">Вакансии работодателей, ожидающие одобрения. «Разрешить» — публикация в каталоге. «Отклонить» — вакансия остаётся у работодателя с комментарием о причине.</p>
             </header>
             <div id="admin-moderation-list" class="admin-table-wrap"></div>
             </section>
@@ -111,9 +111,20 @@
                 <span class="search-form__label">Поиск по названию</span>
                 <input type="search" id="admin-vac-search" class="input" placeholder="Должность…" autocomplete="off" />
               </label>
+              <label class="search-form__field admin-toolbar__pagesize">
+                <span class="search-form__label">Показать по</span>
+                <select id="admin-vac-page-size" class="input input--sm">
+                  <option value="5" selected>5</option>
+                  <option value="10">10</option>
+                  <option value="15">15</option>
+                  <option value="25">25</option>
+                  <option value="50">50</option>
+                </select>
+              </label>
+              <button type="button" id="admin-export-vacancies" class="btn btn--outline admin-toolbar__export">Выгрузить в Excel</button>
             </div>
             <div id="admin-vac-list" class="admin-table-wrap"></div>
-            <button type="button" id="admin-vac-more" class="btn btn--outline admin-load-more" hidden>Загрузить ещё</button>
+            <nav id="admin-vac-pagination" class="admin-pagination" aria-label="Страницы вакансий" hidden></nav>
             </section>
 
             <section id="admin-panel-users" class="admin-panel" data-panel="users" hidden>
@@ -121,8 +132,21 @@
               <h2 class="admin-panel__title">Пользователи</h2>
               <p class="admin-panel__desc">Роль <strong>admin</strong> задаётся только в SQL. Здесь — переключение соискатель ↔ работодатель.</p>
             </header>
+            <div class="admin-toolbar">
+              <label class="search-form__field admin-toolbar__pagesize">
+                <span class="search-form__label">Показать по</span>
+                <select id="admin-users-page-size" class="input input--sm">
+                  <option value="5" selected>5</option>
+                  <option value="10">10</option>
+                  <option value="15">15</option>
+                  <option value="25">25</option>
+                  <option value="50">50</option>
+                </select>
+              </label>
+              <button type="button" id="admin-export-users" class="btn btn--outline admin-toolbar__export">Выгрузить в Excel</button>
+            </div>
             <div id="admin-users-list" class="admin-table-wrap"></div>
-            <button type="button" id="admin-users-more" class="btn btn--outline admin-load-more" hidden>Загрузить ещё</button>
+            <nav id="admin-users-pagination" class="admin-pagination" aria-label="Страницы пользователей" hidden></nav>
             </section>
 
             <section id="admin-panel-responses" class="admin-panel" data-panel="responses" hidden>
@@ -137,6 +161,52 @@
       </div>
     </div>
   </main>
+
+  <div id="admin-reject-modal" class="admin-modal" hidden aria-hidden="true">
+    <div class="admin-modal__backdrop" data-close-reject-modal></div>
+    <div class="admin-modal__dialog auth-card admin-modal__dialog--form" role="dialog" aria-labelledby="admin-reject-title">
+      <h2 id="admin-reject-title" class="admin-modal__title">Отклонить вакансию</h2>
+      <p class="auth-form__note" id="admin-reject-vacancy-title"></p>
+      <form id="admin-reject-form" class="admin-reject-form">
+        <input type="hidden" name="vacancy_id" />
+        <fieldset class="admin-reject-reasons">
+          <legend class="search-form__label">Причина отклонения</legend>
+          <label class="admin-reject-option">
+            <input type="radio" name="reject_preset" value="incomplete" checked />
+            <span>Неполное описание вакансии или отсутствуют обязательные сведения</span>
+          </label>
+          <label class="admin-reject-option">
+            <input type="radio" name="reject_preset" value="unreliable" />
+            <span>Недостоверные сведения об организации, оплате или условиях труда</span>
+          </label>
+          <label class="admin-reject-option">
+            <input type="radio" name="reject_preset" value="rules" />
+            <span>Нарушение правил размещения объявлений центра занятости</span>
+          </label>
+          <label class="admin-reject-option">
+            <input type="radio" name="reject_preset" value="duplicate" />
+            <span>Дублирование ранее опубликованной вакансии</span>
+          </label>
+          <label class="admin-reject-option">
+            <input type="radio" name="reject_preset" value="contacts" />
+            <span>Некорректные или непроверяемые контактные данные работодателя</span>
+          </label>
+          <label class="admin-reject-option">
+            <input type="radio" name="reject_preset" value="custom" />
+            <span>Своя причина (комментарий ниже)</span>
+          </label>
+        </fieldset>
+        <label class="search-form__field" id="admin-reject-custom-wrap">
+          <span class="search-form__label">Комментарий администратора</span>
+          <textarea name="reject_custom" class="input input--textarea" rows="3" maxlength="1000" placeholder="Укажите причину, если выбран пункт «Своя причина»"></textarea>
+        </label>
+        <div class="employer-form__actions">
+          <button type="submit" class="btn btn--primary">Отклонить и вернуть работодателю</button>
+          <button type="button" class="btn btn--outline" data-close-reject-modal>Отмена</button>
+        </div>
+      </form>
+    </div>
+  </div>
 
   <div id="admin-vacancy-modal" class="admin-modal" hidden aria-hidden="true">
     <div class="admin-modal__backdrop" data-close-modal></div>
@@ -212,6 +282,7 @@
   </footer>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="js/supabase-config.js"></script>
   <script src="js/admin.js"></script>
 </body>

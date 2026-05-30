@@ -33,15 +33,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
   loginForm.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const email    = loginForm.querySelector('[name="email"]').value.trim();
-    const password = loginForm.querySelector('[name="password"]').value;
+    const { email, password } = readLoginCredentials(loginForm);
 
-    if (!email || !password) { showToast('Заполните все поля', 'error'); return; }
+    if (!email || !password) {
+      showToast('Заполните e-mail и пароль', 'error');
+      return;
+    }
 
     const { error } = await sb.auth.signInWithPassword({ email, password });
-    if (error) { showToast(error.message, 'error'); return; }
+    if (error) {
+      const msg = error.message.includes('Invalid login credentials')
+        ? 'Неверный e-mail или пароль. Проверьте раскладку (латиница) и лишние пробелы.'
+        : error.message;
+      showToast(msg, 'error');
+      return;
+    }
 
     showToast('Вы вошли в систему', 'success');
+    await updateHeaderAuth();
     await renderDashboard();
   });
 
@@ -65,6 +74,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (data.session) {
       showToast('Регистрация успешна!', 'success');
+      await updateHeaderAuth();
       await renderDashboard();
     } else {
       showToast('Проверьте почту для подтверждения или отключите подтверждение в Supabase (Authentication → Providers → Email).', 'info');
@@ -122,6 +132,8 @@ document.addEventListener('DOMContentLoaded', () => {
   async function renderDashboard() {
     const user = await getCurrentUser();
     if (!user) return;
+
+    await updateHeaderAuth();
 
     if (authPanel) authPanel.hidden = true;
     authForms.hidden = true;
@@ -223,8 +235,10 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       const user = await getCurrentUser();
       if (user) {
+        await updateHeaderAuth();
         await renderDashboard();
       } else {
+        await updateHeaderAuth();
         if (authPanel) authPanel.hidden = false;
         dashboard.hidden = true;
       }

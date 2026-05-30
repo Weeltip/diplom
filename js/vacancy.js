@@ -48,12 +48,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     <li>Опыт: ${experienceText}</li>
   `;
 
-  if (!v.is_published) {
-    const notice = document.createElement('p');
+  if (!v.is_published && isOwner) {
+    const notice = document.createElement('div');
     notice.className = 'vacancy-moderation-notice';
-    notice.textContent = isOwner
-      ? 'Вакансия на проверке у администратора. После одобрения она появится в каталоге.'
-      : 'Вакансия ожидает проверки администратором.';
+    if (v.rejection_reason) {
+      notice.innerHTML = `
+        <p class="vacancy-moderation-notice__title">Вакансия отклонена</p>
+        <p><strong>Причина:</strong> ${escapeHtml(v.rejection_reason)}</p>
+        <p>Исправьте замечания в личном кабинете и отправьте на проверку снова.</p>`;
+    } else {
+      notice.textContent = 'Вакансия на проверке у администратора. После одобрения она появится в каталоге.';
+    }
     document.querySelector('.detail__header')?.appendChild(notice);
   }
 
@@ -78,6 +83,26 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (employerInfo) employerInfo.textContent = v.employer;
 
   const respondBtn = document.getElementById('respond-btn');
+
+  async function seekerAlreadyResponded(userId) {
+    const { data, error } = await sb
+      .from('responses')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('vacancy_id', v.id)
+      .maybeSingle();
+    if (error) return false;
+    return !!data;
+  }
+
+  function markRespondButtonAlreadySent() {
+    if (!respondBtn) return;
+    respondBtn.disabled = true;
+    respondBtn.textContent = 'Вы уже откликались';
+    respondBtn.classList.add('btn--ghost');
+    respondBtn.dataset.responded = '1';
+  }
+
   if (respondBtn) {
     if (!v.is_published) {
       respondBtn.disabled = true;
@@ -89,10 +114,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         respondBtn.disabled = true;
         respondBtn.textContent = 'Отклик доступен соискателям';
         respondBtn.classList.add('btn--ghost');
+      } else if (prof?.role === 'seeker' && (await seekerAlreadyResponded(user.id))) {
+        markRespondButtonAlreadySent();
       }
     }
 
     respondBtn.addEventListener('click', async () => {
+      if (respondBtn.dataset.responded === '1') {
+        showToast('Вы уже откликались на эту вакансию', 'info');
+        return;
+      }
       const u = await getCurrentUser();
       if (!u) {
         showToast('Войдите в личный кабинет, чтобы откликнуться', 'error');
@@ -116,12 +147,24 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
       }
 
+      if (await seekerAlreadyResponded(u.id)) {
+        markRespondButtonAlreadySent();
+        showToast('Вы уже откликались на эту вакансию', 'info');
+        return;
+      }
+
+      respondBtn.disabled = true;
+
       const { error: respError } = await sb
         .from('responses')
         .insert({ user_id: u.id, vacancy_id: v.id });
 
       if (respError) {
-        if (respError.code === '23505') {
+        respondBtn.disabled = false;
+        const dup = respError.code === '23505'
+          || /duplicate|unique|уже существует/i.test(respError.message || '');
+        if (dup) {
+          markRespondButtonAlreadySent();
           showToast('Вы уже откликались на эту вакансию', 'info');
         } else {
           showToast('Ошибка при отклике', 'error');
@@ -131,6 +174,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       showToast('Отклик отправлен!', 'success');
       respondBtn.textContent = 'Отклик отправлен';
       respondBtn.disabled = true;
+      respondBtn.dataset.responded = '1';
     });
   }
 });
