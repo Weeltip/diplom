@@ -176,7 +176,7 @@
               <div class="employer-form__row">
                 <label class="search-form__field">
                   <span class="search-form__label">Зарплата</span>
-                  <input type="text" name="salary" class="input" placeholder="от 50 000 ₽" />
+                  <input type="text" name="salary" class="input" placeholder="от 5 500 руб." />
                 </label>
                 <label class="search-form__field">
                   <span class="search-form__label">Тип занятости</span>
@@ -188,15 +188,72 @@
                   </select>
                 </label>
               </div>
-              <div class="employer-form__row">
-                <label class="search-form__field">
-                  <span class="search-form__label">Локация</span>
-                  <input type="text" name="location" class="input" placeholder="г. Иваново" />
-                </label>
-                <label class="search-form__field">
-                  <span class="search-form__label">Опыт / метка</span>
-                  <input type="text" name="experience" class="input" placeholder="Опыт от 1 года" />
-                </label>
+              <div class="employer-form__row employer-form__row--location">
+                <div class="location-picker" id="employer-location-picker" data-location-picker>
+                  <input type="hidden" name="location" />
+                  <div class="location-picker__grid">
+                    <div class="location-picker__field">
+                      <span class="search-form__label">Город</span>
+                      <div class="location-picker__box">
+                        <button type="button" class="location-picker__trigger" data-picker-trigger="city" aria-expanded="false">
+                          <span class="location-picker__value location-picker__value--placeholder" data-picker-label="city">Выберите город</span>
+                          <span class="location-picker__chevron" aria-hidden="true">▾</span>
+                        </button>
+                        <div class="location-picker__dropdown" data-picker-dropdown="city" hidden>
+                          <input type="search" class="input location-picker__search" data-picker-search="city" placeholder="Поиск города" autocomplete="off" />
+                          <div class="location-picker__list" data-picker-list="city"></div>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="location-picker__field" data-district-group hidden>
+                      <span class="search-form__label">Район</span>
+                      <div class="location-picker__box">
+                        <button type="button" class="location-picker__trigger" data-picker-trigger="district" aria-expanded="false">
+                          <span class="location-picker__value location-picker__value--placeholder" data-picker-label="district">Не обязательно</span>
+                          <span class="location-picker__chevron" aria-hidden="true">▾</span>
+                        </button>
+                        <div class="location-picker__dropdown" data-picker-dropdown="district" hidden>
+                          <input type="search" class="input location-picker__search" data-picker-search="district" placeholder="Поиск района" autocomplete="off" />
+                          <div class="location-picker__list" data-picker-list="district"></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <fieldset class="experience-form" data-experience-form data-experience-name="experience">
+                  <legend class="search-form__label">Опыт работы</legend>
+                  <div class="experience-form__list" data-experience-options></div>
+                </fieldset>
+              </div>
+              <div class="employer-form__row employer-form__row--taxonomy">
+                <div class="category-picker" data-category-picker="specialization">
+                  <input type="hidden" name="specialization" />
+                  <span class="search-form__label">Специализация</span>
+                  <div class="location-picker__box">
+                    <button type="button" class="location-picker__trigger" data-category-trigger aria-expanded="false">
+                      <span class="location-picker__value location-picker__value--placeholder" data-category-label>Выберите специализацию</span>
+                      <span class="location-picker__chevron" aria-hidden="true">▾</span>
+                    </button>
+                    <div class="location-picker__dropdown" data-category-dropdown hidden>
+                      <input type="search" class="input location-picker__search" data-category-search placeholder="Поиск специализации" autocomplete="off" />
+                      <div class="location-picker__list" data-category-list></div>
+                    </div>
+                  </div>
+                </div>
+                <div class="category-picker" data-category-picker="industry">
+                  <input type="hidden" name="industry" />
+                  <span class="search-form__label">Отрасль компании</span>
+                  <div class="location-picker__box">
+                    <button type="button" class="location-picker__trigger" data-category-trigger aria-expanded="false">
+                      <span class="location-picker__value location-picker__value--placeholder" data-category-label>Выберите отрасль</span>
+                      <span class="location-picker__chevron" aria-hidden="true">▾</span>
+                    </button>
+                    <div class="location-picker__dropdown" data-category-dropdown hidden>
+                      <input type="search" class="input location-picker__search" data-category-search placeholder="Поиск отрасли" autocomplete="off" />
+                      <div class="location-picker__list" data-category-list></div>
+                    </div>
+                  </div>
+                </div>
               </div>
               <label class="search-form__field">
                 <span class="search-form__label">Описание</span>
@@ -221,7 +278,7 @@
         <div id="employer-screen-responses" class="employer-screen" hidden>
           <button type="button" id="employer-back-responses" class="btn btn--link employer-panel-back">← Назад</button>
           <h2 class="dash__subtitle">Отклики соискателей</h2>
-          <p class="auth-form__note employer-hint">Здесь отображаются кандидаты, откликнувшиеся на <strong>ваши</strong> вакансии. По указанным телефону и e-mail можно связаться напрямую.</p>
+          <p class="auth-form__note employer-hint">Здесь отображаются кандидаты, откликнувшиеся на <strong>ваши</strong> вакансии. По телефону и e-mail можно связаться напрямую. После собеседования отметьте статус: <strong>приглашён</strong>, <strong>трудоустроен</strong> или <strong>отказ</strong> — соискатель и центр занятости увидят результат.</p>
           <div id="employer-incoming-responses" class="employer-incoming-responses"></div>
         </div>
 
@@ -246,6 +303,12 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/supabase-config.js"></script>
+  <script src="js/pmr-locations.js"></script>
+  <script src="js/vacancy-taxonomy.js"></script>
+  <script src="js/vacancy-experience.js"></script>
+  <script src="js/location-picker.js"></script>
+  <script src="js/category-picker.js"></script>
+  <script src="js/response-status.js"></script>
   <script src="js/employer.js"></script>
   <script src="js/auth.js"></script>
 </body>

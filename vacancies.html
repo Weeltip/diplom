@@ -39,51 +39,141 @@
 
     <section class="search-bar search-bar--flush">
       <div class="container">
-        <form class="search-form" action="#" method="get" aria-label="Поиск вакансий" onsubmit="return false;">
+        <form class="search-form search-form--solo" action="#" method="get" aria-label="Поиск вакансий" onsubmit="return false;">
           <label class="search-form__field">
             <span class="search-form__label">Должность или ключевые слова</span>
             <input type="search" name="keywords" class="input" autocomplete="off" placeholder="Например: бухгалтер, водитель" />
-          </label>
-          <label class="search-form__field search-form__field--narrow">
-            <span class="search-form__label">Район / город</span>
-            <input type="text" name="location" class="input" autocomplete="off" placeholder="Весь регион" />
           </label>
         </form>
       </div>
     </section>
 
-    <section class="filters">
-      <div class="container">
-        <div class="filters__row">
-          <span class="filters__title">Быстрый фильтр</span>
-          <div class="chips" role="group" aria-label="Фильтры по типу занятости">
-            <button type="button" class="chip chip--active">Все</button>
-            <button type="button" class="chip">Полная занятость</button>
-            <button type="button" class="chip">Сменный график</button>
-            <button type="button" class="chip">Удалённо</button>
-            <button type="button" class="chip">Стажировка</button>
+    <section class="vacancies-page">
+      <div class="container vacancies-page__inner">
+        <aside class="vacancies-sidebar" aria-label="Фильтры вакансий">
+          <div class="sidebar-filter" id="city-filter">
+            <h2 class="sidebar-filter__title">Город</h2>
+            <div class="city-filter__compact" id="city-filter-compact"></div>
+            <button type="button" class="city-filter__toggle" id="city-filter-expand">Показать все</button>
+            <div class="city-filter__expanded" id="city-filter-expanded" hidden>
+              <input
+                type="search"
+                id="city-search"
+                class="input city-filter__search"
+                placeholder="Поиск города"
+                autocomplete="off"
+                aria-label="Поиск города"
+              />
+              <div class="city-filter__list" id="city-filter-list" tabindex="0"></div>
+              <button type="button" class="city-filter__toggle" id="city-filter-collapse">Свернуть</button>
+            </div>
           </div>
-        </div>
-      </div>
-    </section>
 
-    <section class="listings" id="listings">
-      <div class="container">
-        <div class="section-head">
-          <h2 class="section-head__title">Результаты</h2>
-          <p id="vacancy-count" class="section-head__meta">Загрузка…</p>
-        </div>
-        <div id="vacancy-list-wrap" class="vacancy-list-wrap" aria-busy="true">
-          <div id="vacancy-list-inner" class="vacancy-list-inner">
-            <ul id="vacancy-list" class="vacancy-grid vacancy-grid--list"></ul>
+          <div class="sidebar-filter" id="district-filter">
+            <h2 class="sidebar-filter__title">Район</h2>
+            <div class="city-filter__compact" id="district-filter-compact"></div>
+            <button type="button" class="city-filter__toggle" id="district-filter-expand">Показать все</button>
+            <div class="city-filter__expanded" id="district-filter-expanded" hidden>
+              <input
+                type="search"
+                id="district-search"
+                class="input city-filter__search"
+                placeholder="Поиск района"
+                autocomplete="off"
+                aria-label="Поиск района"
+              />
+              <div class="city-filter__list" id="district-filter-list" tabindex="0"></div>
+              <button type="button" class="city-filter__toggle" id="district-filter-collapse">Свернуть</button>
+            </div>
           </div>
-          <div id="vacancies-preloader" class="vacancies-preloader vacancies-preloader--visible" aria-hidden="false">
-            <div class="vacancies-preloader__spinner" aria-hidden="true"></div>
-            <p class="vacancies-preloader__text">Загрузка вакансий…</p>
+
+          <div class="sidebar-filter" id="specialization-filter">
+            <h2 class="sidebar-filter__title">Специализации</h2>
+            <div class="city-filter__compact" data-taxonomy-compact></div>
+            <button type="button" class="city-filter__toggle" data-taxonomy-expand>Выбрать ещё</button>
+            <div class="city-filter__expanded" data-taxonomy-expanded hidden>
+              <input
+                type="search"
+                class="input city-filter__search"
+                data-taxonomy-search
+                placeholder="Поиск специализации"
+                autocomplete="off"
+                aria-label="Поиск специализации"
+              />
+              <div class="city-filter__list" data-taxonomy-list tabindex="0"></div>
+              <button type="button" class="city-filter__toggle" data-taxonomy-collapse>Свернуть</button>
+            </div>
           </div>
-        </div>
-        <div class="listings__more">
-          <button id="load-more" type="button" class="btn btn--outline btn--wide" hidden>Загрузить ещё</button>
+
+          <div class="sidebar-filter" id="industry-filter">
+            <h2 class="sidebar-filter__title">Отрасль компании</h2>
+            <div class="city-filter__compact" data-taxonomy-compact></div>
+            <button type="button" class="city-filter__toggle" data-taxonomy-expand>Выбрать ещё</button>
+            <div class="city-filter__expanded" data-taxonomy-expanded hidden>
+              <input
+                type="search"
+                class="input city-filter__search"
+                data-taxonomy-search
+                placeholder="Поиск отрасли"
+                autocomplete="off"
+                aria-label="Поиск отрасли"
+              />
+              <div class="city-filter__list" data-taxonomy-list tabindex="0"></div>
+              <button type="button" class="city-filter__toggle" data-taxonomy-collapse>Свернуть</button>
+            </div>
+          </div>
+
+          <div class="sidebar-filter" id="experience-filter">
+            <h2 class="sidebar-filter__title">Опыт работы</h2>
+            <div class="experience-filter__list" data-experience-list role="radiogroup" aria-label="Опыт работы"></div>
+          </div>
+
+          <div class="sidebar-filter">
+            <h2 class="sidebar-filter__title">Тип занятости</h2>
+            <div class="chips chips--sidebar" role="group" aria-label="Фильтры по типу занятости">
+              <button type="button" class="chip chip--active" aria-pressed="true">Все</button>
+              <button type="button" class="chip" aria-pressed="false">Полная занятость</button>
+              <button type="button" class="chip" aria-pressed="false">Сменный график</button>
+              <button type="button" class="chip" aria-pressed="false">Удалённо</button>
+              <button type="button" class="chip" aria-pressed="false">Стажировка</button>
+            </div>
+          </div>
+
+          <div class="sidebar-filter sidebar-filter--salary" id="salary-filter" hidden>
+            <h2 class="sidebar-filter__title">Зарплата, руб.</h2>
+            <div class="salary-range">
+              <p class="salary-range__values" id="salary-range-label" aria-live="polite">—</p>
+              <div class="salary-range__sliders">
+                <label class="salary-range__field">
+                  <span class="salary-range__field-label">От</span>
+                  <input type="range" id="salary-min" class="salary-range__input" aria-label="Минимальная зарплата" />
+                </label>
+                <label class="salary-range__field">
+                  <span class="salary-range__field-label">До</span>
+                  <input type="range" id="salary-max" class="salary-range__input" aria-label="Максимальная зарплата" />
+                </label>
+              </div>
+            </div>
+          </div>
+        </aside>
+
+        <div class="vacancies-main">
+          <div class="section-head">
+            <h2 class="section-head__title">Результаты</h2>
+            <p id="vacancy-count" class="section-head__meta">Загрузка…</p>
+          </div>
+          <div id="vacancy-list-wrap" class="vacancy-list-wrap" aria-busy="true">
+            <div id="vacancy-list-inner" class="vacancy-list-inner">
+              <ul id="vacancy-list" class="vacancy-grid vacancy-grid--list"></ul>
+            </div>
+            <div id="vacancies-preloader" class="vacancies-preloader vacancies-preloader--visible" aria-hidden="false">
+              <div class="vacancies-preloader__spinner" aria-hidden="true"></div>
+              <p class="vacancies-preloader__text">Загрузка вакансий…</p>
+            </div>
+          </div>
+          <div class="listings__more">
+            <button id="load-more" type="button" class="btn btn--outline btn--wide" hidden>Загрузить ещё</button>
+          </div>
         </div>
       </div>
     </section>
@@ -131,6 +221,10 @@
   </footer>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/supabase-config.js"></script>
+  <script src="js/pmr-locations.js"></script>
+  <script src="js/vacancy-taxonomy.js"></script>
+  <script src="js/vacancy-experience.js"></script>
+  <script src="js/sidebar-taxonomy-filter.js"></script>
   <script src="js/vacancies.js"></script>
 </body>
 </html>

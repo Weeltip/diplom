@@ -16,6 +16,10 @@
       .select(`
         id,
         created_at,
+        status,
+        hired_at,
+        status_updated_at,
+        message,
         vacancy_id,
         profiles (full_name, phone, contact_email),
         vacancies!inner (title, id, created_by)
@@ -46,23 +50,36 @@
           ? `<a class="employer-response__link" href="mailto:${escapeHtml(mail)}">${escapeHtml(mail)}</a>`
           : '—';
 
+        const statusTitle = row.hired_at
+          ? `Трудоустроен ${formatDate(row.hired_at)}`
+          : row.status_updated_at
+            ? `Обновлено ${formatDate(row.status_updated_at)}`
+            : '';
+
         return `
       <article class="employer-response-card">
         <header class="employer-response-card__head">
           <span class="employer-response-card__vacancy">${escapeHtml(row.vacancies.title)}</span>
           <time class="employer-response-card__date" datetime="${row.created_at}">${formatDate(row.created_at)}</time>
         </header>
-        <p class="employer-response-card__name">${escapeHtml(name)}</p>
+        <p class="employer-response-card__name">
+          ${escapeHtml(name)}
+          ${responseStatusBadgeHtml(row.status, { title: statusTitle })}
+        </p>
         <dl class="employer-response-card__contacts">
           <div><dt>Телефон</dt><dd>${phoneHtml}</dd></div>
           <div><dt>E-mail</dt><dd>${mailHtml}</dd></div>
         </dl>
+        ${responseMessageHtml(row.message)}
+        ${responseStatusEmployerActionsHtml(row.id, row.status)}
         <p class="employer-response-card__actions">
           <a class="btn btn--link" href="vacancy.html?id=${row.vacancy_id}">Открыть вакансию</a>
         </p>
       </article>`;
       })
       .join('');
+
+    bindResponseStatusActions(host, refreshIncomingResponses);
   }
 
   function vacancyStatusBadge(v) {
@@ -155,8 +172,12 @@
     f.querySelector('[name="title"]').value = v.title;
     f.querySelector('[name="salary"]').value = v.salary || '';
     f.querySelector('[name="employment_type"]').value = v.employment_type || 'Полная занятость';
-    f.querySelector('[name="location"]').value = v.location || '';
-    f.querySelector('[name="experience"]').value = v.experience || '';
+    const picker = document.getElementById('employer-location-picker')?._locationPicker;
+    if (picker) picker.setValue(v.location || '');
+    else f.querySelector('[name="location"]').value = v.location || '';
+    f.querySelector('[data-category-picker="specialization"]')?._categoryPicker?.setValue(v.specialization || '');
+    f.querySelector('[data-category-picker="industry"]')?._categoryPicker?.setValue(v.industry || '');
+    setExperienceFormValue(f, v.experience || '');
     f.querySelector('[name="description"]').value = v.description || '';
     f.querySelector('[name="requirements"]').value = v.requirements || '';
     f.querySelector('[name="conditions"]').value = v.conditions || '';
@@ -174,6 +195,10 @@
     editingId = null;
     const f = getForm();
     f.reset();
+    document.getElementById('employer-location-picker')?._locationPicker?.reset();
+    document.querySelector('[data-category-picker="specialization"]')?._categoryPicker?.reset();
+    document.querySelector('[data-category-picker="industry"]')?._categoryPicker?.reset();
+    setExperienceFormValue(f, '');
     const heading = document.getElementById('employer-create-heading');
     if (heading) heading.textContent = 'Новая вакансия';
     document.getElementById('employer-form-submit').textContent = 'Отправить на проверку';
@@ -244,6 +269,7 @@
     document.getElementById('employer-open-vacancies')?.addEventListener('click', () => go('vacancies'));
     document.getElementById('employer-open-create')?.addEventListener('click', () => {
       resetForm();
+      void taxonomyRefreshPublishedExtras(sb).then(() => taxonomyRefreshCategoryPickers());
       void go('create');
     });
     document.getElementById('employer-back-create')?.addEventListener('click', () => go('hub'));
@@ -282,6 +308,8 @@
 
     await refreshList();
     await refreshIncomingResponses();
+    await taxonomyRefreshPublishedExtras(sb);
+    taxonomyRefreshCategoryPickers();
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -295,6 +323,8 @@
         salary: String(fd.get('salary') || '').trim(),
         employment_type: String(fd.get('employment_type') || '').trim() || 'Полная занятость',
         location: String(fd.get('location') || '').trim(),
+        specialization: String(fd.get('specialization') || '').trim(),
+        industry: String(fd.get('industry') || '').trim(),
         experience: String(fd.get('experience') || '').trim(),
         description: String(fd.get('description') || '').trim(),
         requirements: String(fd.get('requirements') || '').trim(),
@@ -305,6 +335,20 @@
 
       if (!payload.employer || !payload.title) {
         showToast('Укажите название организации и должность', 'error');
+        return;
+      }
+
+      const picker = document.getElementById('employer-location-picker')?._locationPicker;
+      if (!picker?.getCity()) {
+        showToast('Выберите город из списка ПМР', 'error');
+        return;
+      }
+      if (!payload.specialization) {
+        showToast('Укажите специализацию (из списка или свой вариант)', 'error');
+        return;
+      }
+      if (!payload.industry) {
+        showToast('Укажите отрасль (из списка или свой вариант)', 'error');
         return;
       }
 
@@ -324,6 +368,8 @@
             salary: payload.salary,
             employment_type: payload.employment_type,
             location: payload.location,
+            specialization: payload.specialization,
+            industry: payload.industry,
             experience: payload.experience,
             description: payload.description,
             requirements: payload.requirements,
@@ -333,7 +379,7 @@
           .eq('created_by', user.id);
 
         if (error) {
-          showToast(error.message, 'error');
+          showToast(formatSupabaseError(error), 'error');
           return;
         }
         showToast(
@@ -346,11 +392,11 @@
       } else {
         const { error } = await sb.from('vacancies').insert(payload);
         if (error) {
-          showToast(error.message, 'error');
+          showToast(formatSupabaseError(error), 'error');
           return;
         }
         showToast('Вакансия отправлена на проверку администратору', 'success');
-        form.reset();
+        resetForm();
       }
 
       await refreshList();

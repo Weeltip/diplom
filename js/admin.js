@@ -228,11 +228,12 @@
     try {
       const data = await fetchAllRows(
         'vacancies',
-        'id, title, employer, salary, employment_type, location, experience, is_published, rejection_reason, is_featured, created_at',
+        'id, title, employer, salary, employment_type, location, specialization, industry, experience, is_published, rejection_reason, is_featured, created_at',
         'created_at'
       );
       const header = [
-        'ID', 'Должность', 'Организация', 'Зарплата', 'Тип занятости', 'Локация', 'Опыт',
+        'ID', 'Должность', 'Организация', 'Зарплата', 'Тип занятости', 'Локация',
+        'Специализация', 'Отрасль', 'Опыт',
         'Статус', 'Причина отклонения', 'Закреплена', 'Дата создания'
       ];
       const statusText = (v) => {
@@ -248,6 +249,8 @@
         v.salary || '',
         v.employment_type || '',
         v.location || '',
+        v.specialization || '',
+        v.industry || '',
         v.experience || '',
         statusText(v),
         v.rejection_reason || '',
@@ -261,20 +264,33 @@
   }
 
   async function loadCounts() {
-    const [{ count: pc }, { count: vc }, { count: rc }, { count: pending }] = await Promise.all([
-      sb.from('profiles').select('*', { count: 'exact', head: true }),
+    const [
+      { count: seekerCount },
+      { count: employerCount },
+      { count: vc },
+      { count: rc },
+      { count: pending },
+      { count: hiredCount }
+    ] = await Promise.all([
+      sb.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'seeker'),
+      sb.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'employer'),
       sb.from('vacancies').select('*', { count: 'exact', head: true }),
       sb.from('responses').select('*', { count: 'exact', head: true }),
-      sb.from('vacancies').select('*', { count: 'exact', head: true }).eq('is_published', false).is('rejection_reason', null)
+      sb.from('vacancies').select('*', { count: 'exact', head: true }).eq('is_published', false).is('rejection_reason', null),
+      sb.from('responses').select('*', { count: 'exact', head: true }).eq('status', 'hired')
     ]);
-    const elP = document.getElementById('stat-profiles');
+    const elSeekers = document.getElementById('stat-seekers');
+    const elEmployers = document.getElementById('stat-employers');
     const elV = document.getElementById('stat-vacancies');
     const elR = document.getElementById('stat-responses');
     const elPending = document.getElementById('stat-pending');
-    if (elP) elP.textContent = pc ?? '0';
+    const elHired = document.getElementById('stat-hired');
+    if (elSeekers) elSeekers.textContent = seekerCount ?? '0';
+    if (elEmployers) elEmployers.textContent = employerCount ?? '0';
     if (elV) elV.textContent = vc ?? '0';
     if (elR) elR.textContent = rc ?? '0';
     if (elPending) elPending.textContent = pending ?? '0';
+    if (elHired) elHired.textContent = hiredCount ?? '0';
   }
 
   function vacancyStatusLabel(v) {
@@ -535,8 +551,12 @@
     form.elements.title.value = v.title || '';
     form.elements.salary.value = v.salary || '';
     form.elements.employment_type.value = v.employment_type || 'Полная занятость';
-    form.elements.location.value = v.location || '';
-    form.elements.experience.value = v.experience || '';
+    const picker = document.getElementById('admin-location-picker')?._locationPicker;
+    if (picker) picker.setValue(v.location || '');
+    else form.elements.location.value = v.location || '';
+    form.querySelector('[data-category-picker="specialization"]')?._categoryPicker?.setValue(v.specialization || '');
+    form.querySelector('[data-category-picker="industry"]')?._categoryPicker?.setValue(v.industry || '');
+    setExperienceFormValue(form, v.experience || '');
     form.elements.description.value = v.description || '';
     form.elements.requirements.value = v.requirements || '';
     form.elements.conditions.value = v.conditions || '';
@@ -678,6 +698,10 @@
         `
         id,
         created_at,
+        status,
+        hired_at,
+        status_updated_at,
+        message,
         vacancy_id,
         profiles (full_name, phone, contact_email),
         vacancies (title, employer)
@@ -708,17 +732,27 @@
         const mailHtml = mail
           ? `<a class="employer-response__link" href="mailto:${escapeHtml(mail)}">${escapeHtml(mail)}</a>`
           : '—';
+        const statusTitle = row.hired_at
+          ? `Трудоустроен ${formatDate(row.hired_at)}`
+          : row.status_updated_at
+            ? `Обновлено ${formatDate(row.status_updated_at)}`
+            : '';
+
         return `
       <article class="employer-response-card admin-response-card">
         <header class="employer-response-card__head">
           <span class="employer-response-card__vacancy">${escapeHtml(vac.title || '—')} · ${escapeHtml(vac.employer || '')}</span>
           <time class="employer-response-card__date" datetime="${row.created_at}">${formatDate(row.created_at)}</time>
         </header>
-        <p class="employer-response-card__name">${escapeHtml(pr.full_name || '—')}</p>
+        <p class="employer-response-card__name">
+          ${escapeHtml(pr.full_name || '—')}
+          ${responseStatusBadgeHtml(row.status, { title: statusTitle })}
+        </p>
         <dl class="employer-response-card__contacts">
           <div><dt>Телефон</dt><dd>${phoneHtml}</dd></div>
           <div><dt>E-mail</dt><dd>${mailHtml}</dd></div>
         </dl>
+        ${responseMessageHtml(row.message)}
         <p class="employer-response-card__actions">
           <a class="btn btn--link" href="vacancy.html?id=${row.vacancy_id}">Открыть вакансию</a>
         </p>
@@ -763,6 +797,9 @@
     }
 
     if (ok) ok.hidden = false;
+    await taxonomyRefreshPublishedExtras(sb);
+    taxonomyRefreshCategoryPickers();
+
     const label = document.getElementById('admin-user-label');
     if (label) label.textContent = profile.full_name || user.email || 'Администратор';
 
@@ -800,6 +837,8 @@
         salary: String(fd.get('salary') || '').trim(),
         employment_type: String(fd.get('employment_type') || '').trim() || 'Полная занятость',
         location: String(fd.get('location') || '').trim(),
+        specialization: String(fd.get('specialization') || '').trim(),
+        industry: String(fd.get('industry') || '').trim(),
         experience: String(fd.get('experience') || '').trim(),
         description: String(fd.get('description') || '').trim(),
         requirements: String(fd.get('requirements') || '').trim(),
@@ -813,9 +852,23 @@
         return;
       }
 
+      const picker = document.getElementById('admin-location-picker')?._locationPicker;
+      if (!picker?.getCity()) {
+        showToast('Выберите город из списка ПМР', 'error');
+        return;
+      }
+      if (!payload.specialization) {
+        showToast('Выберите специализацию', 'error');
+        return;
+      }
+      if (!payload.industry) {
+        showToast('Выберите отрасль компании', 'error');
+        return;
+      }
+
       const { error: upErr } = await sb.from('vacancies').update(payload).eq('id', id);
       if (upErr) {
-        showToast(upErr.message, 'error');
+        showToast(formatSupabaseError(upErr), 'error');
         return;
       }
       showToast('Вакансия сохранена', 'success');

@@ -83,6 +83,18 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (employerInfo) employerInfo.textContent = v.employer;
 
   const respondBtn = document.getElementById('respond-btn');
+  const respondFields = document.getElementById('respond-fields');
+  const respondMessage = document.getElementById('respond-message');
+  const respondHint = document.getElementById('respond-hint');
+
+  function setRespondFieldsVisible(visible) {
+    if (respondFields) respondFields.hidden = !visible;
+  }
+
+  function lockRespondMessage() {
+    if (respondMessage) respondMessage.readOnly = true;
+    setRespondFieldsVisible(false);
+  }
 
   async function seekerAlreadyResponded(userId) {
     const { data, error } = await sb
@@ -101,6 +113,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     respondBtn.textContent = 'Вы уже откликались';
     respondBtn.classList.add('btn--ghost');
     respondBtn.dataset.responded = '1';
+    lockRespondMessage();
+    if (respondHint) {
+      respondHint.textContent = 'Отклик отправлен. Статус можно посмотреть в личном кабинете.';
+    }
   }
 
   if (respondBtn) {
@@ -108,14 +124,26 @@ document.addEventListener('DOMContentLoaded', async () => {
       respondBtn.disabled = true;
       respondBtn.textContent = 'Отклик после публикации';
       respondBtn.classList.add('btn--ghost');
+      setRespondFieldsVisible(false);
     } else if (user) {
       const { data: prof } = await sb.from('profiles').select('role').eq('id', user.id).single();
       if (prof?.role === 'employer' || prof?.role === 'admin') {
         respondBtn.disabled = true;
         respondBtn.textContent = 'Отклик доступен соискателям';
         respondBtn.classList.add('btn--ghost');
+        setRespondFieldsVisible(false);
       } else if (prof?.role === 'seeker' && (await seekerAlreadyResponded(user.id))) {
         markRespondButtonAlreadySent();
+      } else {
+        setRespondFieldsVisible(true);
+        if (respondHint) {
+          respondHint.textContent = 'Можно кратко описать опыт и навыки — это необязательно, но поможет работодателю.';
+        }
+      }
+    } else {
+      setRespondFieldsVisible(true);
+      if (respondHint) {
+        respondHint.textContent = 'Войдите в личный кабинет, чтобы отправить отклик. Сообщение о себе — по желанию.';
       }
     }
 
@@ -155,9 +183,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       respondBtn.disabled = true;
 
+      const message = String(respondMessage?.value || '').trim().slice(0, 2000);
+      const payload = { user_id: u.id, vacancy_id: v.id };
+      if (message) payload.message = message;
+
       const { error: respError } = await sb
         .from('responses')
-        .insert({ user_id: u.id, vacancy_id: v.id });
+        .insert(payload);
 
       if (respError) {
         respondBtn.disabled = false;
@@ -175,6 +207,10 @@ document.addEventListener('DOMContentLoaded', async () => {
       respondBtn.textContent = 'Отклик отправлен';
       respondBtn.disabled = true;
       respondBtn.dataset.responded = '1';
+      lockRespondMessage();
+      if (respondHint) {
+        respondHint.textContent = 'Отклик отправлен. Статус можно посмотреть в личном кабинете.';
+      }
     });
   }
 });

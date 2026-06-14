@@ -217,13 +217,26 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!responses || responses.length === 0) {
       list.innerHTML = '<p class="auth-form__note">У вас пока нет откликов.</p>';
     } else {
-      list.innerHTML = responses.map(r => `
+      list.innerHTML = responses.map((r) => {
+        const statusTitle = r.hired_at
+          ? `Трудоустроен ${formatDate(r.hired_at)}`
+          : r.status_updated_at
+            ? `Обновлено ${formatDate(r.status_updated_at)}`
+            : '';
+        const messageHtml = r.message
+          ? `<p class="dash-response__message">${escapeHtml(r.message).replace(/\n/g, '<br>')}</p>`
+          : '';
+        return `
       <div class="dash-response">
-        <a href="vacancy.html?id=${r.vacancy_id}" class="dash-response__title">${escapeHtml(r.vacancies.title)}</a>
-        <span class="dash-response__employer">${escapeHtml(r.vacancies.employer)}</span>
-        <time class="dash-response__date">${formatDate(r.created_at)}</time>
-      </div>
-    `).join('');
+        <div class="dash-response__main">
+          <a href="vacancy.html?id=${r.vacancy_id}" class="dash-response__title">${escapeHtml(r.vacancies.title)}</a>
+          <span class="dash-response__employer">${escapeHtml(r.vacancies.employer)}</span>
+          ${responseStatusBadgeHtml(r.status, { title: statusTitle })}
+          <time class="dash-response__date">${formatDate(r.created_at)}</time>
+        </div>
+        ${messageHtml}
+      </div>`;
+      }).join('');
     }
 
     if (location.hash === '#profile-contacts') {
