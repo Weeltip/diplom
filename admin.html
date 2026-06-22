@@ -39,7 +39,7 @@
   <main class="admin-wrap">
     <div id="admin-gate-deny" class="admin-gate auth-card container" hidden>
       <h1 class="auth-card__title">Нет доступа</h1>
-      <p class="auth-form__note">Админ-панель доступна только пользователям с ролью <strong>admin</strong> в таблице <code>profiles</code>. Выполните миграцию <code>sql/migration-admin.sql</code> и назначьте роль в Supabase.</p>
+      <p class="auth-form__note">Админ-панель доступна только пользователям с ролью <strong>admin</strong> в таблице <code>profiles</code>. Выполните <code>sql/profiles.sql</code>, <code>sql/vacancies.sql</code>, <code>sql/responses.sql</code> и назначьте роль: <code>UPDATE profiles SET role = 'admin' WHERE id = '…'</code>.</p>
       <a class="btn btn--primary" href="cabinet.html">В личный кабинет</a>
     </div>
 
