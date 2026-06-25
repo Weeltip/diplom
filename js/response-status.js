@@ -43,7 +43,7 @@ function responseStatusEmployerActionsHtml(responseId, currentStatus) {
   if (st !== 'invited' && st !== 'hired' && st !== 'rejected') {
     items.push({ status: 'invited', label: 'Пригласить', className: 'btn btn--sm btn--outline' });
   }
-  if (st !== 'hired') {
+  if (st !== 'hired' && st !== 'rejected') {
     items.push({ status: 'hired', label: 'Трудоустроен', className: 'btn btn--sm btn--primary' });
   }
   if (st !== 'rejected') {
