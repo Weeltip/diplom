@@ -81,7 +81,7 @@ function formatSupabaseError(error) {
     && (/schema cache/i.test(msg) || /column/i.test(msg) || /does not exist/i.test(msg))
   ) {
     return 'В таблице vacancies нет колонок specialization и industry. '
-      + 'Откройте Supabase → SQL Editor и выполните sql/migration-vacancy-taxonomy.sql';
+      + 'Выполните sql/vacancies.sql в Supabase → SQL Editor (новый проект — все 3 файла по порядку).';
   }
   return msg || 'Неизвестная ошибка';
 }

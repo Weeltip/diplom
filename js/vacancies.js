@@ -22,6 +22,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const districtCollapseBtn = document.getElementById('district-filter-collapse');
   const districtListEl    = document.getElementById('district-filter-list');
   const districtSearchEl  = document.getElementById('district-search');
+  const applyFiltersBtn   = document.getElementById('vacancies-apply-filters');
+  const applyFiltersCount = document.getElementById('vacancies-apply-count');
+  const resetFiltersBtn   = document.getElementById('vacancies-reset-filters');
 
   const SEARCH_DEBOUNCE_MS = 320;
   const PAGE_SIZE          = 6;
@@ -44,9 +47,13 @@ document.addEventListener('DOMContentLoaded', () => {
   let citySearchQuery       = '';
   let selectedDistricts     = new Set();
   let districtCounts        = new Map();
+  let geoCountRows          = [];
   let districtFilterExpanded = false;
   let districtSearchQuery   = '';
   let filterScrollEnabled   = false;
+  let appliedSidebarState   = null;
+  let applyPreviewToken     = 0;
+  let applyPreviewDebounce  = null;
 
   function scrollAfterFilter() {
     if (!filterScrollEnabled) return;
@@ -58,9 +65,256 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  function cloneSet(set) {
+    return new Set(set);
+  }
+
+  function getActiveEmploymentChip() {
+    const active = document.querySelector('.chips--sidebar .chip--active');
+    if (!active) return '';
+    const label = active.textContent.trim();
+    return label === 'Все' ? '' : label;
+  }
+
+  function captureSidebarState() {
+    readSelectedCitiesFromDom();
+    readSelectedDistrictsFromDom();
+    specializationFilter.readSelectedFromDom();
+    industryFilter.readSelectedFromDom();
+    readSalaryFilterFromDom();
+    return {
+      cities: cloneSet(selectedCities),
+      districts: cloneSet(selectedDistricts),
+      spec: cloneSet(specializationFilter.getSelected()),
+      industry: cloneSet(industryFilter.getSelected()),
+      experience: experienceFilter.getSelected(),
+      salaryMin: filterSalaryMin,
+      salaryMax: filterSalaryMax,
+      employment: getActiveEmploymentChip()
+    };
+  }
+
+  function setsEqual(a, b) {
+    if (a.size !== b.size) return false;
+    for (const item of a) if (!b.has(item)) return false;
+    return true;
+  }
+
+  function isSidebarDirty() {
+    if (!appliedSidebarState) return false;
+    const pending = captureSidebarState();
+    const a = appliedSidebarState;
+    return (
+      !setsEqual(pending.cities, a.cities)
+      || !setsEqual(pending.districts, a.districts)
+      || !setsEqual(pending.spec, a.spec)
+      || !setsEqual(pending.industry, a.industry)
+      || pending.experience !== a.experience
+      || pending.salaryMin !== a.salaryMin
+      || pending.salaryMax !== a.salaryMax
+      || pending.employment !== a.employment
+    );
+  }
+
+  function isSidebarStateDefault(state) {
+    if (!state) return true;
+    return (
+      state.cities.size === 0
+      && state.districts.size === 0
+      && state.spec.size === 0
+      && state.industry.size === 0
+      && state.experience === 'any'
+      && salaryRangeIsFull(state.salaryMin, state.salaryMax)
+      && !state.employment
+    );
+  }
+
+  function canResetSidebarFilters() {
+    if (!appliedSidebarState) return false;
+    return isSidebarDirty() || !isSidebarStateDefault(appliedSidebarState);
+  }
+
+  function vacancyMatchesCitiesFromSet(location, cities) {
+    if (!cities.size) return true;
+    for (const city of cities) {
+      if (pmrLocationMatchesCity(location, city)) return true;
+    }
+    return false;
+  }
+
+  function vacancyMatchesDistrictsFromSet(location, districts, cities) {
+    if (!districts.size) return true;
+    for (const districtName of districts) {
+      if (pmrLocationMatchesDistrictName(location, districtName, cities)) return true;
+    }
+    return false;
+  }
+
+  function salaryRangeIsFull(min, max) {
+    if (!salaryBoundsReady) return true;
+    return min <= catalogSalaryMin && max >= catalogSalaryMax;
+  }
+
+  function vacancyMatchesSalaryRange(salaryText, min, max) {
+    if (!salaryBoundsReady) return true;
+    if (salaryRangeIsFull(min, max)) return true;
+    const range = parseSalaryRange(salaryText);
+    if (!range) return salaryRangeIsFull(min, max);
+    return range.min <= max && range.max >= min;
+  }
+
+  function filterRowsWithState(rows, state) {
+    const expFilter = state.experience;
+    let list = rows
+      .filter((v) => vacancyMatchesCitiesFromSet(v.location, state.cities))
+      .filter((v) => vacancyMatchesDistrictsFromSet(v.location, state.districts, state.cities))
+      .filter((v) => taxonomyMatchesSelected(v.specialization, state.spec))
+      .filter((v) => taxonomyMatchesSelected(v.industry, state.industry))
+      .filter((v) => vacancyMatchesExperienceFilter(v.experience, expFilter));
+    if (salaryBoundsReady) {
+      list = list.filter((v) => vacancyMatchesSalaryRange(v.salary, state.salaryMin, state.salaryMax));
+    }
+    return list;
+  }
+
+  function hideApplyFiltersButton() {
+    if (applyFiltersBtn) applyFiltersBtn.hidden = true;
+  }
+
+  function updateResetFiltersButton() {
+    if (!resetFiltersBtn || !filterScrollEnabled) return;
+    resetFiltersBtn.disabled = !canResetSidebarFilters();
+  }
+
+  function resetSidebarFiltersUi() {
+    selectedCities.clear();
+    selectedDistricts.clear();
+    setCityFilterExpanded(false);
+    setDistrictFilterExpanded(false);
+    updateCityFilterUi();
+    updateDistrictFilterUi();
+
+    document
+      .querySelectorAll(
+        '#specialization-filter .city-filter-item__input:checked, #industry-filter .city-filter-item__input:checked'
+      )
+      .forEach((input) => {
+        input.checked = false;
+      });
+    specializationFilter.readSelectedFromDom();
+    industryFilter.readSelectedFromDom();
+    specializationFilter.render();
+    industryFilter.render();
+
+    const anyExperience = document.querySelector('#experience-filter input[value="any"]');
+    if (anyExperience) anyExperience.checked = true;
+    experienceFilter.readSelectedFromDom();
+    experienceFilter.render();
+
+    if (salaryBoundsReady && salaryMinEl && salaryMaxEl) {
+      filterSalaryMin = catalogSalaryMin;
+      filterSalaryMax = catalogSalaryMax;
+      salaryMinEl.value = String(catalogSalaryMin);
+      salaryMaxEl.value = String(catalogSalaryMax);
+      updateSalaryLabel();
+    }
+
+    chips.forEach((chip) => {
+      const isAll = chip.textContent.trim() === 'Все';
+      chip.classList.toggle('chip--active', isAll);
+      chip.setAttribute('aria-pressed', isAll ? 'true' : 'false');
+    });
+    currentFilter = '';
+  }
+
+  async function resetSidebarFilters() {
+    if (!canResetSidebarFilters()) return;
+
+    resetSidebarFiltersUi();
+    if (resetFiltersBtn) resetFiltersBtn.disabled = true;
+    if (applyFiltersBtn) applyFiltersBtn.disabled = true;
+    setPreloader(true);
+
+    try {
+      serverRows = await fetchVacancyRows('', searchQuery);
+      applyClientFilters();
+      appliedSidebarState = captureSidebarState();
+      rerenderList({ scroll: true });
+      hideApplyFiltersButton();
+    } catch (err) {
+      console.error(err);
+      showToast('Не удалось сбросить фильтры', 'error');
+    } finally {
+      updateResetFiltersButton();
+      requestAnimationFrame(() => setPreloader(false));
+    }
+  }
+
+  async function refreshApplyFiltersButton() {
+    if (!applyFiltersBtn || !filterScrollEnabled) return;
+
+    if (!isSidebarDirty()) {
+      hideApplyFiltersButton();
+      updateResetFiltersButton();
+      return;
+    }
+
+    applyFiltersBtn.hidden = false;
+    applyFiltersBtn.disabled = true;
+    if (applyFiltersCount) applyFiltersCount.textContent = '…';
+
+    const token = ++applyPreviewToken;
+    const pending = captureSidebarState();
+
+    try {
+      let rows = serverRows;
+      if (pending.employment !== appliedSidebarState.employment) {
+        rows = await fetchVacancyRows(pending.employment, searchQuery);
+      }
+      if (token !== applyPreviewToken) return;
+      const count = filterRowsWithState(rows, pending).length;
+      if (applyFiltersCount) applyFiltersCount.textContent = count.toLocaleString('ru-RU');
+      applyFiltersBtn.disabled = false;
+      updateResetFiltersButton();
+    } catch (err) {
+      console.error(err);
+      if (applyFiltersCount) applyFiltersCount.textContent = '?';
+      applyFiltersBtn.disabled = false;
+      updateResetFiltersButton();
+    }
+  }
+
+  function onSidebarFilterChange() {
+    clearTimeout(applyPreviewDebounce);
+    applyPreviewDebounce = setTimeout(() => {
+      void refreshApplyFiltersButton();
+    }, 120);
+  }
+
+  async function applyPendingSidebarFilters() {
+    const state = captureSidebarState();
+    currentFilter = state.employment;
+    if (applyFiltersBtn) applyFiltersBtn.disabled = true;
+    setPreloader(true);
+
+    try {
+      serverRows = await fetchVacancyRows(state.employment, searchQuery);
+      applyClientFilters();
+      appliedSidebarState = state;
+      rerenderList({ scroll: true });
+      hideApplyFiltersButton();
+      updateResetFiltersButton();
+    } catch (err) {
+      console.error(err);
+      showToast('Ошибка применения фильтров', 'error');
+      if (applyFiltersBtn) applyFiltersBtn.disabled = false;
+    } finally {
+      requestAnimationFrame(() => setPreloader(false));
+    }
+  }
+
   const taxonomyOnChange = () => {
-    applyClientFilters();
-    rerenderList();
+    onSidebarFilterChange();
   };
 
   const specializationFilter = createTaxonomySidebarFilter({
@@ -92,11 +346,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function vacancyMatchesSelectedDistricts(location) {
     if (!selectedDistricts.size) return true;
-    for (const key of selectedDistricts) {
-      const { city, district } = pmrParseDistrictKey(key);
-      if (pmrLocationMatchesDistrict(location, city, district)) return true;
+    for (const districtName of selectedDistricts) {
+      if (pmrLocationMatchesDistrictName(location, districtName, selectedCities)) return true;
     }
     return false;
+  }
+
+  function normalizeDistrictValue(value) {
+    const raw = String(value || '').trim();
+    if (!raw) return '';
+    if (raw.includes('|')) return pmrParseDistrictKey(raw).district;
+    return raw;
+  }
+
+  function pruneSelectedDistricts() {
+    const available = new Set(pmrGetDistrictNamesForCities(selectedCities));
+    selectedDistricts = new Set(
+      [...selectedDistricts]
+        .map(normalizeDistrictValue)
+        .filter((district) => district && available.has(district))
+    );
   }
 
   function readFiltersFromDom() {
@@ -114,7 +383,8 @@ document.addEventListener('DOMContentLoaded', () => {
   function readSelectedDistrictsFromDom() {
     selectedDistricts = new Set();
     document.querySelectorAll('#district-filter .city-filter-item__input:checked').forEach((input) => {
-      if (input.value) selectedDistricts.add(input.value);
+      const district = normalizeDistrictValue(input.value);
+      if (district) selectedDistricts.add(district);
     });
   }
 
@@ -147,14 +417,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function salaryFilterIsFullRange() {
     if (!salaryBoundsReady) return true;
-    return filterSalaryMin <= catalogSalaryMin && filterSalaryMax >= catalogSalaryMax;
+    return salaryRangeIsFull(filterSalaryMin, filterSalaryMax);
   }
 
   function vacancyMatchesSalary(salaryText) {
-    if (!salaryBoundsReady) return true;
-    const range = parseSalaryRange(salaryText);
-    if (!range) return salaryFilterIsFullRange();
-    return range.min <= filterSalaryMax && range.max >= filterSalaryMin;
+    return vacancyMatchesSalaryRange(salaryText, filterSalaryMin, filterSalaryMax);
   }
 
   function applyClientFilters() {
@@ -215,7 +482,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  function rerenderList() {
+  function rerenderList(options = {}) {
     currentOffset = 0;
     grid.innerHTML = '';
     const slice = filteredList.slice(0, PAGE_SIZE);
@@ -224,22 +491,22 @@ document.addEventListener('DOMContentLoaded', () => {
     else appendSlice(slice);
     renderCountLine();
     updateLoadMore();
-    scrollAfterFilter();
+    if (options.scroll) scrollAfterFilter();
   }
 
   function scheduleDebouncedSearch() {
     clearTimeout(searchDebounce);
     searchDebounce = setTimeout(() => {
-      void loadVacancies(true);
+      void loadVacancies(true, { scroll: true });
     }, SEARCH_DEBOUNCE_MS);
   }
 
   function scheduleDebouncedSalary() {
     clearTimeout(salaryDebounce);
     salaryDebounce = setTimeout(() => {
-      applyClientFilters();
+      readSalaryFilterFromDom();
       updateSalaryLabel();
-      rerenderList();
+      onSidebarFilterChange();
     }, 120);
   }
 
@@ -247,8 +514,8 @@ document.addEventListener('DOMContentLoaded', () => {
     return rows.filter((v) => pmrLocationMatchesCity(v.location, city)).length;
   }
 
-  function countVacanciesForDistrict(city, district, rows) {
-    return rows.filter((v) => pmrLocationMatchesDistrict(v.location, city, district)).length;
+  function countVacanciesForDistrictName(districtName, rows, scopeCities) {
+    return rows.filter((v) => pmrLocationMatchesDistrictName(v.location, districtName, scopeCities)).length;
   }
 
   function buildCityCounts(rows) {
@@ -260,10 +527,86 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function buildDistrictCounts(rows) {
     districtCounts = new Map();
-    pmrGetAllDistrictEntries().forEach(({ city, district }) => {
-      const key = pmrDistrictKey(city, district);
-      districtCounts.set(key, countVacanciesForDistrict(city, district, rows));
+    pmrGetDistrictNamesForCities(selectedCities).forEach((districtName) => {
+      districtCounts.set(
+        districtName,
+        countVacanciesForDistrictName(districtName, rows, selectedCities)
+      );
     });
+  }
+
+  function getVisibleDistrictNames() {
+    return pmrGetDistrictNamesForCities(selectedCities);
+  }
+
+  function getCompactDistrictNames() {
+    const available = new Set(getVisibleDistrictNames());
+    return PMR_DISTRICTS_PRIMARY.filter((district) => available.has(district));
+  }
+
+  function renderDistrictCheckbox(districtName, idSuffix) {
+    const count = districtCounts.get(districtName)
+      ?? countVacanciesForDistrictName(districtName, geoCountRows, selectedCities);
+    const checked = selectedDistricts.has(districtName) ? ' checked' : '';
+    const safeId = `district-${idSuffix}-${districtName}`.replace(/\s+/g, '-');
+
+    return `
+      <label class="city-filter-item" data-district-name="${escapeHtml(districtName)}">
+        <input
+          type="checkbox"
+          class="city-filter-item__input"
+          id="${safeId}"
+          name="district"
+          value="${escapeHtml(districtName)}"
+          ${checked}
+        />
+        <span class="city-filter-item__name">${escapeHtml(districtName)}</span>
+        <span class="city-filter-item__count">${count.toLocaleString('ru-RU')}</span>
+      </label>`;
+  }
+
+  function renderCompactDistricts() {
+    if (!districtCompactEl) return;
+    districtCompactEl.innerHTML = getCompactDistrictNames()
+      .map((districtName, i) => renderDistrictCheckbox(districtName, `compact-${i}`))
+      .join('');
+  }
+
+  function renderExpandedDistricts() {
+    if (!districtListEl) return;
+    const query = districtSearchQuery.trim().toLowerCase();
+    const names = getVisibleDistrictNames().filter((districtName) => {
+      if (!query) return true;
+      return districtName.toLowerCase().includes(query);
+    });
+
+    if (!names.length) {
+      districtListEl.innerHTML = '<p class="city-filter__empty">Район не найден</p>';
+      return;
+    }
+
+    const groups = pmrGroupByLetter(names, (districtName) => districtName);
+    districtListEl.innerHTML = groups.map(([letter, items]) => `
+      <div class="city-filter-group" data-letter="${letter}">
+        <div class="city-filter-group__letter" aria-hidden="true">${letter}</div>
+        ${items.map((districtName, i) => renderDistrictCheckbox(districtName, `full-${letter}-${i}`)).join('')}
+      </div>
+    `).join('');
+  }
+
+  function syncDistrictCheckboxes() {
+    document.querySelectorAll('#district-filter .city-filter-item__input').forEach((input) => {
+      input.checked = selectedDistricts.has(normalizeDistrictValue(input.value));
+    });
+  }
+
+  function updateDistrictFilterUi() {
+    buildDistrictCounts(geoCountRows);
+    renderCompactDistricts();
+    renderExpandedDistricts();
+    if (districtExpandBtn) districtExpandBtn.hidden = districtFilterExpanded;
+    if (districtExpandedEl) districtExpandedEl.hidden = !districtFilterExpanded;
+    if (districtCompactEl) districtCompactEl.hidden = districtFilterExpanded;
   }
 
   function renderCityCheckbox(city, idSuffix) {
@@ -288,79 +631,6 @@ document.addEventListener('DOMContentLoaded', () => {
   function renderCompactCities() {
     if (!cityCompactEl) return;
     cityCompactEl.innerHTML = PMR_CITIES_PRIMARY.map((city, i) => renderCityCheckbox(city, `compact-${i}`)).join('');
-  }
-
-  function renderDistrictCheckbox(entry, idSuffix, showHint = true) {
-    const key = pmrDistrictKey(entry.city, entry.district);
-    const count = districtCounts.get(key) ?? 0;
-    const checked = selectedDistricts.has(key) ? ' checked' : '';
-    const safeId = `district-${idSuffix}-${entry.city}-${entry.district}`.replace(/\s+/g, '-');
-    const hintHtml = showHint
-      ? `<span class="city-filter-item__hint">${escapeHtml(entry.city)}</span>`
-      : '';
-
-    return `
-      <label class="city-filter-item" data-district-key="${escapeHtml(key)}">
-        <input
-          type="checkbox"
-          class="city-filter-item__input"
-          id="${safeId}"
-          name="district"
-          value="${escapeHtml(key)}"
-          ${checked}
-        />
-        <span class="city-filter-item__name">
-          ${escapeHtml(entry.district)}
-          ${hintHtml}
-        </span>
-        <span class="city-filter-item__count">${count.toLocaleString('ru-RU')}</span>
-      </label>`;
-  }
-
-  function renderCompactDistricts() {
-    if (!districtCompactEl) return;
-    districtCompactEl.innerHTML = PMR_DISTRICTS_PRIMARY.map((entry, i) =>
-      renderDistrictCheckbox(entry, `compact-${i}`, false)
-    ).join('');
-  }
-
-  function renderExpandedDistricts() {
-    if (!districtListEl) return;
-    const query = districtSearchQuery.trim().toLowerCase();
-    const entries = pmrGetAllDistrictEntries().filter((entry) => {
-      if (!query) return true;
-      return (
-        entry.district.toLowerCase().includes(query)
-        || entry.city.toLowerCase().includes(query)
-      );
-    });
-
-    if (!entries.length) {
-      districtListEl.innerHTML = '<p class="city-filter__empty">Район не найден</p>';
-      return;
-    }
-
-    const groups = pmrGroupByLetter(entries, (entry) => entry.district);
-    districtListEl.innerHTML = groups.map(([letter, items]) => `
-      <div class="city-filter-group" data-letter="${letter}">
-        <div class="city-filter-group__letter" aria-hidden="true">${letter}</div>
-        ${items.map((entry, i) => renderDistrictCheckbox(entry, `full-${letter}-${i}`, true)).join('')}
-      </div>
-    `).join('');
-  }
-
-  function syncDistrictCheckboxes() {
-    document.querySelectorAll('#district-filter .city-filter-item__input').forEach((input) => {
-      input.checked = selectedDistricts.has(input.value);
-    });
-  }
-
-  function updateDistrictFilterUi() {
-    renderCompactDistricts();
-    renderExpandedDistricts();
-    if (districtExpandBtn) districtExpandBtn.hidden = districtFilterExpanded;
-    if (districtExpandedEl) districtExpandedEl.hidden = !districtFilterExpanded;
-    if (districtCompactEl) districtCompactEl.hidden = districtFilterExpanded;
   }
 
   function setDistrictFilterExpanded(expanded) {
@@ -441,8 +711,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const rows = await fetchPublishedLocationRows();
     const taxRows = await taxonomyRefreshPublishedExtras(sb);
 
+    geoCountRows = rows;
     buildCityCounts(rows);
-    buildDistrictCounts(rows);
 
     const mergedSpec = taxonomyGetMergedList('specialization');
     const mergedInd = taxonomyGetMergedList('industry');
@@ -503,7 +773,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (salaryBlock) salaryBlock.hidden = false;
   }
 
-  async function fetchMatchingVacancies() {
+  async function fetchVacancyRows(employmentType, keywords) {
     let q = sb
       .from('vacancies')
       .select('*')
@@ -511,15 +781,19 @@ document.addEventListener('DOMContentLoaded', () => {
       .order('is_featured', { ascending: false })
       .order('created_at', { ascending: false });
 
-    if (currentFilter) q = q.eq('employment_type', currentFilter);
-    if (searchQuery) q = q.ilike('title', `%${searchQuery}%`);
+    if (employmentType) q = q.eq('employment_type', employmentType);
+    if (keywords) q = q.ilike('title', `%${keywords}%`);
 
     const { data, error } = await q;
     if (error) throw error;
     return data || [];
   }
 
-  async function loadVacancies(reset = false) {
+  async function fetchMatchingVacancies() {
+    return fetchVacancyRows(currentFilter, searchQuery);
+  }
+
+  async function loadVacancies(reset = false, options = {}) {
     if (reset) {
       readFiltersFromDom();
       setPreloader(true);
@@ -543,7 +817,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
       renderCountLine();
       updateLoadMore();
-      scrollAfterFilter();
+      appliedSidebarState = captureSidebarState();
+      hideApplyFiltersButton();
+      updateResetFiltersButton();
+      if (options.scroll) scrollAfterFilter();
       requestAnimationFrame(() => setPreloader(false));
       return;
     }
@@ -567,20 +844,24 @@ document.addEventListener('DOMContentLoaded', () => {
     else selectedCities.delete(input.value);
 
     syncCityCheckboxes();
-    applyClientFilters();
-    rerenderList();
+    pruneSelectedDistricts();
+    updateDistrictFilterUi();
+    syncDistrictCheckboxes();
+    onSidebarFilterChange();
   }
 
   function onDistrictCheckboxChange(event) {
     const input = event.target.closest('.city-filter-item__input');
     if (!input) return;
 
-    if (input.checked) selectedDistricts.add(input.value);
-    else selectedDistricts.delete(input.value);
+    const district = normalizeDistrictValue(input.value);
+    if (!district) return;
+
+    if (input.checked) selectedDistricts.add(district);
+    else selectedDistricts.delete(district);
 
     syncDistrictCheckboxes();
-    applyClientFilters();
-    rerenderList();
+    onSidebarFilterChange();
   }
 
   if (searchForm) {
@@ -596,9 +877,16 @@ document.addEventListener('DOMContentLoaded', () => {
       });
       chip.classList.add('chip--active');
       chip.setAttribute('aria-pressed', 'true');
-      currentFilter = chip.textContent.trim() === 'Все' ? '' : chip.textContent.trim();
-      void loadVacancies(true);
+      onSidebarFilterChange();
     });
+  });
+
+  applyFiltersBtn?.addEventListener('click', () => {
+    void applyPendingSidebarFilters();
+  });
+
+  resetFiltersBtn?.addEventListener('click', () => {
+    void resetSidebarFilters();
   });
 
   document.getElementById('city-filter')?.addEventListener('change', onCityCheckboxChange);
@@ -644,6 +932,8 @@ document.addEventListener('DOMContentLoaded', () => {
   void (async () => {
     await Promise.all([initGeoFilters(), initSalaryBounds()]);
     await loadVacancies(true);
+    appliedSidebarState = captureSidebarState();
     filterScrollEnabled = true;
+    updateResetFiltersButton();
   })();
 });

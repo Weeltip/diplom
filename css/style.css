@@ -563,6 +563,21 @@ ul {
   top: 20px;
 }
 
+.vacancies-sidebar__toolbar {
+  margin-bottom: -2px;
+}
+
+.vacancies-sidebar__reset {
+  width: 100%;
+  justify-content: center;
+  font-weight: 600;
+}
+
+.vacancies-sidebar__reset:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
 .sidebar-filter {
   padding: 18px 16px;
   background: var(--surface);
@@ -717,6 +732,43 @@ ul {
 
 .vacancies-main .listings__more {
   margin-top: 24px;
+}
+
+.vacancies-apply-filters {
+  position: fixed;
+  right: max(20px, calc((100vw - 1120px) / 2 + 20px));
+  bottom: 24px;
+  z-index: 50;
+  padding: 14px 22px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  background: #ffc107;
+  border: none;
+  border-radius: 999px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.18);
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s;
+}
+
+.vacancies-apply-filters:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.22);
+}
+
+.vacancies-apply-filters:disabled {
+  opacity: 0.75;
+  cursor: wait;
+}
+
+@media (max-width: 640px) {
+  .vacancies-apply-filters {
+    right: 16px;
+    left: 16px;
+    bottom: 16px;
+    width: auto;
+    text-align: center;
+  }
 }
 
 @media (max-width: 960px) {

@@ -183,7 +183,7 @@
     });
   }
 
-  async function fetchAllRows(table, select, orderCol) {
+  async function fetchAllRows(table, select, orderCol, ascending = false) {
     const rows = [];
     let from = 0;
     const step = 1000;
@@ -191,7 +191,7 @@
       const { data, error } = await sb
         .from(table)
         .select(select)
-        .order(orderCol, { ascending: false })
+        .order(orderCol, { ascending })
         .range(from, from + step - 1);
       if (error) throw error;
       if (!data?.length) break;
@@ -207,7 +207,8 @@
       const data = await fetchAllRows(
         'profiles',
         'id, full_name, role, phone, contact_email, created_at',
-        'created_at'
+        'created_at',
+        true
       );
       const header = ['ID', 'ФИО', 'Роль', 'Телефон', 'E-mail', 'Дата регистрации'];
       const body = data.map((p) => [
@@ -229,7 +230,8 @@
       const data = await fetchAllRows(
         'vacancies',
         'id, title, employer, salary, employment_type, location, specialization, industry, experience, is_published, rejection_reason, is_featured, created_at',
-        'created_at'
+        'id',
+        true
       );
       const header = [
         'ID', 'Должность', 'Организация', 'Зарплата', 'Тип занятости', 'Локация',

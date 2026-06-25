@@ -51,6 +51,16 @@
     <section class="vacancies-page">
       <div class="container vacancies-page__inner">
         <aside class="vacancies-sidebar" aria-label="Фильтры вакансий">
+          <div class="vacancies-sidebar__toolbar">
+            <button
+              type="button"
+              id="vacancies-reset-filters"
+              class="btn btn--ghost btn--sm vacancies-sidebar__reset"
+              disabled
+            >
+              Сбросить фильтры
+            </button>
+          </div>
           <div class="sidebar-filter" id="city-filter">
             <h2 class="sidebar-filter__title">Город</h2>
             <div class="city-filter__compact" id="city-filter-compact"></div>
@@ -176,6 +186,10 @@
           </div>
         </div>
       </div>
+
+      <button type="button" id="vacancies-apply-filters" class="vacancies-apply-filters" hidden>
+        Показать результаты (<span id="vacancies-apply-count">0</span>)
+      </button>
     </section>
 
     <section class="cta-band">

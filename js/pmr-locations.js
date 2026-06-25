@@ -247,14 +247,12 @@ const PMR_DISTRICTS = {
 };
 
 const PMR_DISTRICTS_PRIMARY = [
-  { city: 'Тирасполь', district: 'Черновка' },
-  { city: 'Тирасполь', district: 'Центральный' },
-  { city: 'Тирасполь', district: 'Тихвинка' },
-  { city: 'Тирасполь', district: 'Днестровский' },
-  { city: 'Бендеры', district: 'Центральный' },
-  { city: 'Бендеры', district: 'Привокзальный' },
-  { city: 'Бендеры', district: 'Суворовский' },
-  { city: 'Рыбница', district: 'Центральный' }
+  'Черновка',
+  'Центральный',
+  'Тихвинка',
+  'Днестровский',
+  'Привокзальный',
+  'Суворовский'
 ];
 
 function pmrDistrictKey(city, district) {
@@ -264,6 +262,25 @@ function pmrDistrictKey(city, district) {
 function pmrParseDistrictKey(key) {
   const [city = '', district = ''] = String(key || '').split('|');
   return { city, district };
+}
+
+function pmrGetUniqueDistrictNames() {
+  const names = new Set();
+  Object.values(PMR_DISTRICTS).forEach((districts) => {
+    districts.forEach((district) => names.add(district));
+  });
+  return [...names].sort((a, b) => a.localeCompare(b, 'ru'));
+}
+
+function pmrGetDistrictNamesForCities(cities) {
+  const cityList = cities instanceof Set ? [...cities] : (cities || []);
+  if (!cityList.length) return pmrGetUniqueDistrictNames();
+
+  const names = new Set();
+  cityList.forEach((city) => {
+    pmrGetDistricts(city).forEach((district) => names.add(district));
+  });
+  return [...names].sort((a, b) => a.localeCompare(b, 'ru'));
 }
 
 function pmrNormalizeLocation(text) {
@@ -341,6 +358,30 @@ function pmrLocationMatchesDistrict(location, city, district) {
   if (!pmrLocationMatchesCity(location, city)) return false;
   const loc = pmrNormalizeLocation(location);
   return loc.includes(String(district || '').toLowerCase());
+}
+
+function pmrLocationMatchesDistrictName(location, districtName, scopeCities) {
+  const districtLower = String(districtName || '').toLowerCase();
+  const loc = pmrNormalizeLocation(location);
+  if (!districtLower || !loc.includes(districtLower)) return false;
+
+  const cities = scopeCities instanceof Set ? scopeCities : new Set(scopeCities || []);
+  if (cities.size > 0) {
+    for (const city of cities) {
+      if (pmrLocationMatchesDistrict(location, city, districtName)) return true;
+    }
+    return false;
+  }
+
+  const parsed = pmrParseLocation(location);
+  if (parsed.city) {
+    return (PMR_DISTRICTS[parsed.city] || []).includes(districtName);
+  }
+
+  for (const city of Object.keys(PMR_DISTRICTS)) {
+    if (pmrLocationMatchesDistrict(location, city, districtName)) return true;
+  }
+  return false;
 }
 
 function pmrGroupByLetter(items, getLabel) {
